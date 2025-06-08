@@ -198,6 +198,11 @@
         </label>
 
         <label>
+            Auxílio visual:
+            <input type="checkbox" id="helpToggle" checked>
+        </label>
+
+        <label>
             Ordem Aleatória:
             <input type="checkbox" id="randomToggle">
         </label>
@@ -215,23 +220,7 @@
     
             <button id="fileSelectBtn" class="btn-restart">Selecionar Arquivo</button>
         </div>
-
-     
     </div>
-
-    <div class="info-container">
-        <div class="info-icon">i</div>
-        <div class="info-text">
-          <label style="margin-left: 5px; font-size: 16px;">Exemplo do formato do arquivo .txt: </label>
-          <br>
-          <br>
-          <code>{question: 'question', answer: 'answer', "image": "image_url (optional)"}</code>
-          <br>
-          <code>{question: 'question', answer: 'answer', "image": "image_url (optional)"}</code>
-          <br>
-          <code>{question: 'question', answer: 'answer', "image": "image_url (optional)"}</code>
-        </div>
-      </div>
 </div>
 
 <div id="scorePanel">
@@ -258,6 +247,7 @@
     let selectedVoice = null;
     let correctSoundEnabled = true;
     let wrongSoundEnabled = true;
+    let helpToggleEnabled = true;
     let randomToggleEnabled = false;
     let utterance = null;
 
@@ -276,6 +266,7 @@
     const correctSoundToggle = document.getElementById('correctSoundToggle');
     const wrongSoundToggle = document.getElementById('wrongSoundToggle');
     const randomToggle = document.getElementById("randomToggle")
+    const helpToggle = document.getElementById("helpToggle")
     const voiceSelect = document.getElementById('voiceSelect');
 
     function populateVoices() {
@@ -297,6 +288,10 @@
     });
     wrongSoundToggle.addEventListener('change', () => {
         wrongSoundEnabled = wrongSoundToggle.checked;
+    });
+    helpToggle.addEventListener('change', () => {
+        helpToggleEnabled = helpToggle.checked;
+        displaySyllable()
     });
 
     function shuffle(lista) {
@@ -358,6 +353,7 @@
                     acc.push({
                         ru: obj.question,
                         pt: obj.answer,
+                        obs: obj.answer_observation || "",
                         img: obj.image || null
                     });
                 }
@@ -392,6 +388,12 @@
             hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
         }
         return Math.abs(hash >>> 0);
+    }
+
+    const emojis = ["◬", "▧", "⊖", "⬠", "∵"];
+    function getEmojiFromString(str) {
+        const index = str % emojis.length;
+        return emojis[index];
     }
 
     function generateColor(str) {
@@ -509,7 +511,10 @@
         syllableEl.style.left = x + 'px';
         syllableEl.style.top = y + 'px';
         syllableEl.style.color = color;
-        syllableEl.textContent = currentSyllable.ru;
+        syllableEl.textContent = currentSyllable.ru
+        if (helpToggleEnabled) {
+            syllableEl.textContent += " " + getEmojiFromString(currentSyllable.pickIndex);
+        }
 
         translationElement = document.createElement('span');
         translationElement.classList.add('translation');
@@ -626,9 +631,13 @@
 
                 }
                
-                translationElement.textContent = currentSyllable.pt;
+                translationElement.textContent = currentSyllable.pt + " " + currentSyllable.obs;
+                if (helpToggleEnabled) {
+                    translationElement.textContent += " " + getEmojiFromString(currentSyllable.pickIndex)
+                }
                 userTyped = '';
                 hintUsed = true;
+                
             }
         }
     });
