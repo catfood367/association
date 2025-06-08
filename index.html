@@ -351,7 +351,7 @@
                     acc.push({
                         ru: obj.question,
                         pt: obj.answer,
-                        obs: obj.answer_observation || "",
+                        obs: obj.answer_observation || null,
                         img: obj.image || null
                     });
                 }
@@ -629,11 +629,13 @@
 
                 }
 
-                const info = document.getElementById('info-container');
-                const popup = document.getElementById('popup');
-                info.style.display = 'flex'
-                popup.textContent = currentSyllable.obs
-               
+                if (currentSyllable.obs) {
+                    const info = document.getElementById('info-container');
+                    const popup = document.getElementById('popup');
+                    info.style.display = 'flex'
+                    popup.textContent = currentSyllable.obs
+                }
+       
                 translationElement.textContent = currentSyllable.pt;
                 userTyped = '';
                 hintUsed = true;
