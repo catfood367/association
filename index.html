@@ -134,7 +134,7 @@
       position: absolute;
       top: 0;
       right: 20px;
-      display: flex;
+      display: none;
       align-items: center;
       background-color: #f0f4f8;
       border: 1px solid #cbd5e0;
@@ -158,10 +158,10 @@
       margin-right: 12px;
     }
 
-    .info-text {
-      font-size: 14px;
+    .popup {
+      font-size: 20px;
       color: #2d3748;
-      word-break: break-word;
+
     }
 
     code {
@@ -218,21 +218,14 @@
 
      
     </div>
-
-    <!-- <div class="info-container">
-        <div class="info-icon">i</div>
-        <div class="info-text">
-          <label style="margin-left: 5px; font-size: 16px;">Exemplo do formato do arquivo .txt: </label>
-          <br>
-          <br>
-          <code>{question: 'question', answer: 'answer', "image": "image_url (optional)"}</code>
-          <br>
-          <code>{question: 'question', answer: 'answer', "image": "image_url (optional)"}</code>
-          <br>
-          <code>{question: 'question', answer: 'answer', "image": "image_url (optional)"}</code>
-        </div>
-      </div> -->
 </div>
+
+<div class="info-container" id="info-container">
+    <div class="info-icon">i</div>
+    <div class="popup" id="popup">
+        testeaa
+    </div>
+  </div>
 
 <div id="scorePanel">
     <button id="settingsBtn"><img src="https://static.vecteezy.com/system/resources/previews/047/429/167/non_2x/blue-settings-icon-free-png.png" alt=""></button>
@@ -409,8 +402,9 @@
         const marginBottom = 150;
         const marginLeft = 100;
         const marginRight = 100;
-        const elWidth = 150;
-        const elHeight = 80;
+        console.log(syllableEl.scrollWidth)
+        const elWidth = syllableEl.scrollWidth;
+        const elHeight = syllableEl.scrollHeight;
 
         const maxX = window.innerWidth - marginRight - elWidth;
         const maxY = window.innerHeight - marginBottom - elHeight;
@@ -480,6 +474,7 @@
         return { syllable: currentGroup[randomIndex], index: randomIndex };
     }
 
+    let syllableEl = null
     function displaySyllable() {
         if (!currentGroup.length) return;
 
@@ -488,6 +483,9 @@
 
         const picked = pickRandomSyllable();
         if (!picked) return;
+
+        const info = document.getElementById('info-container');
+        info.style.display = 'none'
 
         currentSyllable = picked.syllable;
         currentSyllable.pickIndex = picked.index;
@@ -501,26 +499,30 @@
         }
 
         const color = generateColor(currentSyllable.ru);
-        const { x, y } = generatePosition(currentSyllable.ru);
 
         if (currentSyllableElement) currentSyllableElement.remove();
 
-        const syllableEl = document.createElement('div');
+         syllableEl = document.createElement('div');
         syllableEl.classList.add('syllable');
-        syllableEl.style.left = x + 'px';
-        syllableEl.style.top = y + 'px';
+
         syllableEl.style.color = color;
         syllableEl.textContent = currentSyllable.ru;
 
         translationElement = document.createElement('span');
         translationElement.classList.add('translation');
         translationElement.style.color = color;
-        translationElement.textContent = '';
+        translationElement.textContent = currentSyllable.pt + "\n" + currentSyllable.obs;
 
         syllableEl.appendChild(translationElement);
 
+
         currentSyllableElement = syllableEl;
         document.body.appendChild(syllableEl);
+        const { x, y } = generatePosition(currentSyllable.ru);
+        translationElement.textContent = '';
+
+        syllableEl.style.left = x + 'px';
+        syllableEl.style.top = y + 'px';
     }
 
     function startGame() {
@@ -626,8 +628,13 @@
                     }
 
                 }
+
+                const info = document.getElementById('info-container');
+                const popup = document.getElementById('popup');
+                info.style.display = 'flex'
+                popup.textContent = currentSyllable.obs
                
-                translationElement.textContent = currentSyllable.pt + " " + currentSyllable.obs;
+                translationElement.textContent = currentSyllable.pt;
                 userTyped = '';
                 hintUsed = true;
                 
