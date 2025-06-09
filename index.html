@@ -583,7 +583,7 @@ let count =0;
 
         const key = e.key.toLowerCase();
 
-        if (/^[a-z ]$/.test(key) && key.length === 1) {
+        if (/^[a-z ']$/.test(key) && key.length === 1) {
             userTyped += key;
             translationElement.textContent = userTyped;
             document.body.style.backgroundImage = '';
