@@ -577,6 +577,7 @@
 }
 
 
+let count =0;
     document.addEventListener('keydown', e => {
         if (!currentSyllable) return;
 
@@ -600,6 +601,7 @@
                    
                     createParticle(currentSyllableElement);
                     score++;
+                  
                     updateScoreDisplay();
                     currentGroup.splice(currentSyllable.pickIndex, 1);
 
@@ -609,6 +611,7 @@
                     }
                 }
 
+                count = 0;
                 translationElement.textContent = '';
                 currentSyllableElement.remove();
                 displaySyllable();
@@ -620,6 +623,8 @@
                 } else {
                     document.body.style.backgroundImage = '';
                 }
+
+                count++
 
                 if (!hintUsed) {
                     if (wrongSoundEnabled) {
@@ -636,7 +641,12 @@
                     popup.textContent = currentSyllable.obs
                 }
        
-                translationElement.textContent = currentSyllable.pt;
+                if (count > 1) {
+                    translationElement.textContent = currentSyllable.pt;
+                } else if (count === 1) {
+                    translationElement.textContent = currentSyllable.pt[0];
+                }
+              
                 userTyped = '';
                 hintUsed = true;
                 
