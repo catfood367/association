@@ -198,6 +198,11 @@
         </label>
 
         <label>
+            Mostrar primeira letra da resposta:
+            <input type="checkbox" id="answerTipToggle" checked>
+        </label>
+
+        <label>
             Ordem Aleatória:
             <input type="checkbox" id="randomToggle">
         </label>
@@ -252,6 +257,7 @@
     let correctSoundEnabled = true;
     let wrongSoundEnabled = true;
     let randomToggleEnabled = false;
+    let answerTipEnabled = true;
     let utterance = null;
 
     const correctSound = new Audio('right.mp3');
@@ -270,6 +276,7 @@
     const wrongSoundToggle = document.getElementById('wrongSoundToggle');
     const randomToggle = document.getElementById("randomToggle")
     const voiceSelect = document.getElementById('voiceSelect');
+    const answerTipToggle = document.getElementById('answerTipToggle');
 
     function populateVoices() {
         const voices = speechSynthesis.getVoices();
@@ -290,6 +297,11 @@
     });
     wrongSoundToggle.addEventListener('change', () => {
         wrongSoundEnabled = wrongSoundToggle.checked;
+    });
+
+    answerTipToggle.addEventListener('change', () => {
+        answerTipEnabled = answerTipToggle.checked;
+        displaySyllable()
     });
 
     function shuffle(lista) {
@@ -506,7 +518,11 @@
         syllableEl.classList.add('syllable');
 
         syllableEl.style.color = color;
-        syllableEl.textContent = currentSyllable.ru;
+        if (answerTipEnabled) {
+            syllableEl.textContent = currentSyllable.ru + " → " + currentSyllable.pt[0];
+        } else {
+            syllableEl.textContent = currentSyllable.ru
+        }
 
         translationElement = document.createElement('span');
         translationElement.classList.add('translation');
@@ -523,6 +539,14 @@
 
         syllableEl.style.left = x + 'px';
         syllableEl.style.top = y + 'px';
+
+        if (currentSyllable.obs) {
+                    const info = document.getElementById('info-container');
+                    const popup = document.getElementById('popup');
+                    info.style.display = 'flex'
+                    popup.textContent = currentSyllable.obs
+                }
+
     }
 
     function startGame() {
@@ -576,8 +600,6 @@
     requestAnimationFrame(fall);
 }
 
-
-let count =0;
     document.addEventListener('keydown', e => {
         if (!currentSyllable) return;
 
@@ -611,9 +633,12 @@ let count =0;
                     }
                 }
 
-                count = 0;
                 translationElement.textContent = '';
                 currentSyllableElement.remove();
+                if (hintUsed && wrongSoundEnabled) {
+                    wrongSound.currentTime = 0;
+                    wrongSound.play();
+                }
                 displaySyllable();
             } else {
                 if (currentSyllable.img) {
@@ -624,29 +649,8 @@ let count =0;
                     document.body.style.backgroundImage = '';
                 }
 
-                count++
+                translationElement.textContent = currentSyllable.pt;
 
-                if (!hintUsed) {
-                    if (wrongSoundEnabled) {
-                        wrongSound.currentTime = 0;
-                        wrongSound.play();
-                    }
-
-                }
-
-                if (currentSyllable.obs) {
-                    const info = document.getElementById('info-container');
-                    const popup = document.getElementById('popup');
-                    info.style.display = 'flex'
-                    popup.textContent = currentSyllable.obs
-                }
-       
-                if (count > 1) {
-                    translationElement.textContent = currentSyllable.pt;
-                } else if (count === 1) {
-                    translationElement.textContent = currentSyllable.pt[0];
-                }
-              
                 userTyped = '';
                 hintUsed = true;
                 
