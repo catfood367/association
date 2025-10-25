@@ -13,21 +13,30 @@
         user-select: none;
         width: 100vw;
         height: 100vh;
+        transition: background-color 0.3s ease;
+    }
+    body.dark-mode {
+        background: #000000;
     }
     .syllable {
         position: absolute;
         font-size: 40px;
         font-weight: bold;
-        text-align: center;
+        text-align: left;
         line-height: 1.2;
         cursor: default;
+        display: inline-block;
     }
     .translation {
         font-size: 30px;
         font-weight: bold;
         display: block;
         margin-top: 5px;
-        white-space: pre;
+        white-space: nowrap;
+        text-align: left;
+        position: absolute;
+        left: 0;
+        top: 100%;
     }
     #scorePanel {
         position: fixed;
@@ -113,7 +122,6 @@
     }
     .btn-close {
         background: red;
-        
     }
     #voiceSelect {
         appearance: none;
@@ -129,53 +137,18 @@
         font-weight: bold;
         cursor: pointer;
     }
-
-    .info-container {
-      position: absolute;
-      top: 0;
-      right: 20px;
-      display: none;
-      align-items: center;
-      background-color: #f0f4f8;
-      border: 1px solid #cbd5e0;
-      border-radius: 8px;
-      padding: 16px;
-      margin: 20px auto;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      font-family: Arial, sans-serif;
+    #answerTipRange {
+        width: 200px;
     }
-
-    .info-icon {
-      width: 24px;
-      height: 24px;
-      background-color: #3182ce;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      margin-right: 12px;
+    #answerTipValue {
+        display: inline-block;
+        margin-left: 10px;
+        font-weight: bold;
     }
-
-    .popup {
-      font-size: 20px;
-      color: #2d3748;
-
-    }
-
-    code {
-      background: #edf2f7;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-family: monospace;
-    }
-
 </style>
 </head>
 <body>
 
-<!-- Modal de Parabéns -->
 <div id="congratsModal" class="modal">
     <div class="modal-content">
         <h1>🎉 Parabéns! 🎉</h1>
@@ -184,9 +157,31 @@
     </div>
 </div>
 
-<!-- Modal de Configurações -->
 <div id="settingsModal" class="modal">
     <div class="modal-content">
+        <label>
+            Número de letras da dica:
+            <input type="range" id="answerTipRange" min="0" max="3" value="1" step="1">
+            <span id="answerTipValue">1</span>
+        </label>
+
+        <label>
+            Dica de Cor:
+            <input type="checkbox" id="colorHintToggle" checked>
+        </label>
+
+        <label>
+            Dica de Posição:
+            <input type="checkbox" id="positionHintToggle" checked>
+        </label>
+
+        <label>
+            Ordem Aleatória:
+            <input type="checkbox" id="randomToggle">
+        </label>
+
+        <br>
+
         <label>
             Som de Acerto:
             <input type="checkbox" id="correctSoundToggle" checked>
@@ -198,13 +193,8 @@
         </label>
 
         <label>
-            Mostrar primeira letra da resposta:
-            <input type="checkbox" id="answerTipToggle" checked>
-        </label>
-
-        <label>
-            Ordem Aleatória:
-            <input type="checkbox" id="randomToggle">
+            Modo Escuro:
+            <input type="checkbox" id="darkModeToggle">
         </label>
 
         <label style="margin-top:30px;">
@@ -216,28 +206,17 @@
                 Arquivo selecionado:
                 <span id="fileName">Nenhum</span>
             </label>
-    
-    
             <button id="fileSelectBtn" class="btn-restart">Selecionar Arquivo</button>
         </div>
-
-     
     </div>
 </div>
-
-<div class="info-container" id="info-container">
-    <div class="info-icon">i</div>
-    <div class="popup" id="popup">
-        testeaa
-    </div>
-  </div>
 
 <div id="scorePanel">
     <button id="settingsBtn"><img src="https://static.vecteezy.com/system/resources/previews/047/429/167/non_2x/blue-settings-icon-free-png.png" alt=""></button>
     <span id="scoreText">| Pontuação: 0 | Level: 0 / 0</span>
 </div>
 
-<input type="file" id="fileInput" accept=".txt" style="display:none;">
+<input type="file" id="fileInput" accept=".json" style="display:none;">
 
 <script>
 (() => {
@@ -257,7 +236,10 @@
     let correctSoundEnabled = true;
     let wrongSoundEnabled = true;
     let randomToggleEnabled = false;
-    let answerTipEnabled = true;
+    let colorHintEnabled = true;
+    let positionHintEnabled = true;
+    let darkModeEnabled = false;
+    let answerTipLetters = 1;
     let utterance = null;
 
     const correctSound = new Audio('right.mp3');
@@ -270,13 +252,16 @@
     const settingsModal = document.getElementById('settingsModal');
     const settingsBtn = document.getElementById('settingsBtn');
     const fileSelectBtn = document.getElementById('fileSelectBtn');
-    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 
     const correctSoundToggle = document.getElementById('correctSoundToggle');
     const wrongSoundToggle = document.getElementById('wrongSoundToggle');
-    const randomToggle = document.getElementById("randomToggle")
+    const randomToggle = document.getElementById("randomToggle");
+    const colorHintToggle = document.getElementById("colorHintToggle");
+    const positionHintToggle = document.getElementById("positionHintToggle");
+    const darkModeToggle = document.getElementById("darkModeToggle");
     const voiceSelect = document.getElementById('voiceSelect');
-    const answerTipToggle = document.getElementById('answerTipToggle');
+    const answerTipRange = document.getElementById('answerTipRange');
+    const answerTipValue = document.getElementById('answerTipValue');
 
     function populateVoices() {
         const voices = speechSynthesis.getVoices();
@@ -294,14 +279,20 @@
 
     correctSoundToggle.addEventListener('change', () => {
         correctSoundEnabled = correctSoundToggle.checked;
+        savePreferences();
     });
     wrongSoundToggle.addEventListener('change', () => {
         wrongSoundEnabled = wrongSoundToggle.checked;
+        savePreferences();
     });
 
-    answerTipToggle.addEventListener('change', () => {
-        answerTipEnabled = answerTipToggle.checked;
-        displaySyllable()
+    answerTipRange.addEventListener('input', () => {
+        answerTipLetters = parseInt(answerTipRange.value);
+        answerTipValue.textContent = answerTipLetters;
+        savePreferences();
+        if (syllableList.length > 0) {
+            displaySyllable();
+        }
     });
 
     function shuffle(lista) {
@@ -314,28 +305,60 @@
 
     randomToggle.addEventListener('change', () => {
         randomToggleEnabled = randomToggle.checked;
-        startGame()
+        savePreferences();
+        if (syllableList.length > 0) {
+            startGame();
+        }
     });
 
-    voiceSelect.addEventListener('change', () => {
+    colorHintToggle.addEventListener('change', () => {
+        colorHintEnabled = colorHintToggle.checked;
+        savePreferences();
+        if (syllableList.length > 0) {
+            displaySyllable();
+        }
+    });
+
+    positionHintToggle.addEventListener('change', () => {
+        positionHintEnabled = positionHintToggle.checked;
+        savePreferences();
+        if (syllableList.length > 0) {
+            displaySyllable();
+        }
+    });
+
+    darkModeToggle.addEventListener('change', () => {
+        darkModeEnabled = darkModeToggle.checked;
+        document.body.classList.toggle('dark-mode', darkModeEnabled);
+        savePreferences();
+        if (syllableList.length > 0) {
+            displaySyllable();
+        }
+    });
+
+    selectVoice = () => {
         if (voiceSelect.value === 'none') {
-            selectedVoice = null
-            utterance = null
-            return
+            selectedVoice = null;
+            utterance = null;
+            savePreferences();
+            return;
         }
 
         selectedVoice = speechSynthesis.getVoices()[voiceSelect.value];
         utterance = new SpeechSynthesisUtterance();
         utterance.voice = selectedVoice;
+        savePreferences();
 
-        if (currentSyllable?.ru) {
-            utterance.text = currentSyllable.ru
+        if (currentSyllable?.question) {
+            utterance.text = currentSyllable.question;
             if (speechSynthesis.speaking) {
                 speechSynthesis.cancel();
             }
             speechSynthesis.speak(utterance);
         }
-    });
+    };
+
+    voiceSelect.addEventListener('change', selectVoice);
 
     settingsBtn.addEventListener('click', () => {
         settingsModal.style.display = 'flex';
@@ -347,49 +370,99 @@
 
     settingsModal.addEventListener('click', (e) => {
         if (e.target.id === "settingsModal") {
-            settingsModal.style.display = 'none'
+            settingsModal.style.display = 'none';
         }
     });
     
-    function parseSyllableData(text) {
-    return text
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line)
-        .reduce((acc, line) => {
-            try {
-                const obj = eval('(' + line + ')');
-                if (obj.question && obj.answer) {
-                    acc.push({
-                        ru: obj.question,
-                        pt: obj.answer,
-                        obs: obj.answer_observation || null,
-                        img: obj.image || null
-                    });
-                }
-            } catch {
-                console.warn('Linha inválida ignorada:', line);
+    function parseSyllableData(jsonData) {
+        try {
+            const data = JSON.parse(jsonData);
+            if (!Array.isArray(data)) {
+                alert('JSON deve ser um array');
+                return [];
             }
-            return acc;
-        }, []);
-}
+            return data.filter(item => item.question && item.answer);
+        } catch (error) {
+            alert('Erro ao parsear JSON:', error);
+            return [];
+        }
+    }
 
     fileInput.addEventListener('change', e => {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = evt => {
-            syllableList = parseSyllableData(evt.target.result);
+        reader.onload = async evt => {
+            const fileContent = evt.target.result;
+            syllableList = parseSyllableData(fileContent);
             if (!syllableList.length) {
                 alert('Arquivo vazio ou inválido');
                 return;
             }
+            
+            const storageData = {
+                content: fileContent,
+                name: file.name
+            };
+            const result = localStorage.setItem('saved_file', JSON.stringify(storageData));
+
+            fileName.textContent = file.name;
             startGame();
         };
-        fileName.textContent = file.name
         reader.readAsText(file);
     });
+
+    async function savePreferences() {
+        const preferences = {
+            correctSoundEnabled,
+            wrongSoundEnabled,
+            randomToggleEnabled,
+            colorHintEnabled,
+            positionHintEnabled,
+            darkModeEnabled,
+            answerTipLetters,
+            voiceIndex: voiceSelect.value
+        };
+
+        localStorage.setItem('user_preferences', JSON.stringify(preferences));
+    }
+
+    async function loadPreferences() {
+        const result = localStorage.getItem('user_preferences');
+        if (result && result) {
+            const preferences = JSON.parse(result);
+            
+            correctSoundEnabled = preferences.correctSoundEnabled ?? true;
+            wrongSoundEnabled = preferences.wrongSoundEnabled ?? true;
+            randomToggleEnabled = preferences.randomToggleEnabled ?? false;
+            colorHintEnabled = preferences.colorHintEnabled ?? true;
+            positionHintEnabled = preferences.positionHintEnabled ?? true;
+            darkModeEnabled = preferences.darkModeEnabled ?? false;
+            answerTipLetters = preferences.answerTipLetters ?? 1;
+            
+            correctSoundToggle.checked = correctSoundEnabled;
+            wrongSoundToggle.checked = wrongSoundEnabled;
+            randomToggle.checked = randomToggleEnabled;
+            colorHintToggle.checked = colorHintEnabled;
+            positionHintToggle.checked = positionHintEnabled;
+            darkModeToggle.checked = darkModeEnabled;
+            answerTipRange.value = answerTipLetters;
+            answerTipValue.textContent = answerTipLetters;
+            
+            document.body.classList.toggle('dark-mode', darkModeEnabled);
+            
+            if (preferences.voiceIndex) {
+                voiceSelect.value = preferences.voiceIndex;
+                if (preferences.voiceIndex !== 'none') {
+                    setTimeout(() => {
+                        voiceSelect.value = preferences.voiceIndex;
+                        selectVoice();
+                    }, 500);
+                }
+            }
+        }
+    }
 
     function hashCode(str) {
         let hash = 2166136261;
@@ -403,8 +476,15 @@
     function generateColor(str) {
         const hash = hashCode(str);
         const hue = (hash * 137) % 360;
-        const saturation = 100;
-        const lightness = 35 + (hash % 15);
+        const saturation = 85 + (hash % 15);
+        
+        let lightness;
+        if (darkModeEnabled) {
+            lightness = 60 + (hash % 16);
+        } else {
+            lightness = 35 + (hash % 16);
+        }
+        
         return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
 
@@ -414,24 +494,37 @@
         const marginBottom = 150;
         const marginLeft = 100;
         const marginRight = 100;
-        console.log(syllableEl.scrollWidth)
-        const elWidth = syllableEl.scrollWidth;
-        const elHeight = syllableEl.scrollHeight;
+        
+        const tempEl = document.createElement('div');
+        tempEl.classList.add('syllable');
+        tempEl.textContent = str;
+        tempEl.style.visibility = 'hidden';
+        tempEl.style.position = 'absolute';
+        
+        document.body.appendChild(tempEl);
+        
+        const elWidth = tempEl.offsetWidth;
+        const elHeight = tempEl.offsetHeight;
+        
+        document.body.removeChild(tempEl);
 
         const maxX = window.innerWidth - marginRight - elWidth;
         const maxY = window.innerHeight - marginBottom - elHeight;
         const minX = marginLeft;
         const minY = marginTop;
 
-        let x = minX + (hash % (maxX - minX + 1));
-        let y = minY + ((hash >> 8) % (maxY - minY + 1));
+        const rangeX = Math.max(1, maxX - minX + 1);
+        const rangeY = Math.max(1, maxY - minY + 1);
+
+        let x = minX + (Math.abs(hash) % rangeX);
+        let y = minY + (Math.abs(hash >> 8) % rangeY);
 
         x = Math.min(Math.max(x, minX), maxX);
         y = Math.min(Math.max(y, minY), maxY);
 
         return { x, y };
     }
-
+    
     function updateScoreDisplay() {
         const totalLevels = Math.ceil(syllableList.length / groupSize);
         scoreText.textContent = `Pontuação: ${score} | Level: ${currentGroupIndex + 1} / ${totalLevels}`;
@@ -486,7 +579,6 @@
         return { syllable: currentGroup[randomIndex], index: randomIndex };
     }
 
-    let syllableEl = null
     function displaySyllable() {
         if (!currentGroup.length) return;
 
@@ -496,60 +588,59 @@
         const picked = pickRandomSyllable();
         if (!picked) return;
 
-        const info = document.getElementById('info-container');
-        info.style.display = 'none'
-
         currentSyllable = picked.syllable;
         currentSyllable.pickIndex = picked.index;
 
-        if (selectedVoice) {
-            utterance.text = currentSyllable.ru;
+        if (selectedVoice && utterance) {
+            utterance.text = currentSyllable.question;
             if (speechSynthesis.speaking) {
                 speechSynthesis.cancel();
             }
             speechSynthesis.speak(utterance);
         }
 
-        const color = generateColor(currentSyllable.ru);
+        const color = generateColor(currentSyllable.question);
 
         if (currentSyllableElement) currentSyllableElement.remove();
 
-         syllableEl = document.createElement('div');
+        const syllableEl = document.createElement('div');
         syllableEl.classList.add('syllable');
+        syllableEl.style.position = 'relative';
 
-        syllableEl.style.color = color;
-        if (answerTipEnabled) {
-            syllableEl.textContent = currentSyllable.ru + " → " + currentSyllable.pt[0];
+        syllableEl.style.color = colorHintEnabled ? color : (darkModeEnabled ? '#ffffff' : '#000000');
+
+        let placeholder = currentSyllable.answer.length - answerTipLetters > 0 ? "~" : "";
+        
+        if (answerTipLetters > 0) {
+            syllableEl.textContent = currentSyllable.question + " → " + currentSyllable.answer.substring(0, answerTipLetters) + placeholder;
         } else {
-            syllableEl.textContent = currentSyllable.ru
+            syllableEl.textContent = currentSyllable.question;
         }
 
         translationElement = document.createElement('span');
         translationElement.classList.add('translation');
-        translationElement.style.color = color;
-        translationElement.textContent = currentSyllable.pt;
-
-        syllableEl.appendChild(translationElement);
-
-
-        currentSyllableElement = syllableEl;
-        document.body.appendChild(syllableEl);
-        const { x, y } = generatePosition(currentSyllable.ru);
+        translationElement.style.color = colorHintEnabled ? color : (darkModeEnabled ? '#ffffff' : '#000000');
         translationElement.textContent = '';
 
-        syllableEl.style.left = x + 'px';
-        syllableEl.style.top = y + 'px';
+        syllableEl.appendChild(translationElement);
+        
+        currentSyllableElement = syllableEl;
+        document.body.appendChild(syllableEl);
 
-        if (currentSyllable.obs) {
-                    const info = document.getElementById('info-container');
-                    const popup = document.getElementById('popup');
-                    info.style.display = 'flex'
-                    popup.textContent = currentSyllable.obs
-                }
-
+        if (positionHintEnabled) {
+            const { x, y } = generatePosition(syllableEl.textContent);
+            syllableEl.style.left = x + 'px';
+            syllableEl.style.top = y + 'px';
+        } else {
+            syllableEl.style.left = '50%';
+            syllableEl.style.top = '50%';
+            syllableEl.style.transform = 'translate(-50%, -50%)';
+        }
     }
 
     function startGame() {
+        if (syllableList.length === 0) return;
+
         currentGroupIndex = 0;
         currentGroup = [];
         currentSyllable = null;
@@ -557,7 +648,7 @@
         if (translationElement) translationElement.remove();
 
         if (randomToggleEnabled) {
-            syllableList = shuffle(syllableList);
+            syllableList = shuffle([...syllableList]);
         }
 
         score = 0;
@@ -565,63 +656,90 @@
         updateScoreDisplay();
         displaySyllable();
     }
-    function createParticle(element) {
-    const rect = element.getBoundingClientRect();
 
-    const particle = document.createElement('div');
-    particle.style.position = 'fixed';
-    particle.style.left = (rect.left + rect.width / 2 - 4) + 'px'; // centraliza a partícula (8px de largura / 2 = 4)
-    particle.style.top = rect.top + 'px';
-    particle.style.width = '10px';
-    particle.style.height = '10px';
-    particle.style.backgroundColor = element.style.color;
-    particle.style.borderRadius = '0';
-    particle.style.zIndex = '100000';
-    particle.style.opacity = '1';
-    particle.style.pointerEvents = 'none';
-
-    document.body.appendChild(particle);
-
-    let posY = rect.top;
-    const speed = 15 + Math.random() * 2;
-
-    function fall() {
-        posY += speed;
-        particle.style.top = posY + 'px';
-        particle.style.opacity = 1 - posY / window.innerHeight;
-
-        if (posY > window.innerHeight) {
-            particle.remove();
-        } else {
-            requestAnimationFrame(fall);
+    async function loadSavedFile() {
+        const result = localStorage.getItem('saved_file');
+        if (result && result) {
+            const storageData = JSON.parse(result);
+            syllableList = parseSyllableData(storageData.content);
+            if (syllableList.length > 0) {
+                fileName.textContent = storageData.name || 'Arquivo salvo';               
+            }
         }
     }
+    
+    async function init() {
+        await loadPreferences();
+        await loadSavedFile();
 
-    requestAnimationFrame(fall);
-}
+        if (syllableList.length > 0) {
+            startGame();
+        }
+    }
+    
+    init();
+
+    function createParticle(element) {
+        const rect = element.getBoundingClientRect();
+
+        const particle = document.createElement('div');
+        particle.style.position = 'fixed';
+        particle.style.left = (rect.left + rect.width / 2 - 4) + 'px';
+        particle.style.top = rect.top + 'px';
+        particle.style.width = '10px';
+        particle.style.height = '10px';
+        particle.style.backgroundColor = element.style.color;
+        particle.style.borderRadius = '0';
+        particle.style.zIndex = '100000';
+        particle.style.opacity = '1';
+        particle.style.pointerEvents = 'none';
+
+        document.body.appendChild(particle);
+
+        let posY = rect.top;
+        const speed = 15 + Math.random() * 2;
+
+        function fall() {
+            posY += speed;
+            particle.style.top = posY + 'px';
+            particle.style.opacity = 1 - posY / window.innerHeight;
+
+            if (posY > window.innerHeight) {
+                particle.remove();
+            } else {
+                requestAnimationFrame(fall);
+            }
+        }
+
+        requestAnimationFrame(fall);
+    }
 
     document.addEventListener('keydown', e => {
-        if (!currentSyllable) return;
+        if (!currentSyllable || !currentSyllable.answer) return;
 
         const key = e.key.toLowerCase();
 
         if (/^[a-z ']$/.test(key) && key.length === 1) {
             userTyped += key;
-            translationElement.textContent = userTyped;
-            document.body.style.backgroundImage = '';
+            if (translationElement) {
+                translationElement.textContent = userTyped;
+            }
         } else if (e.key === 'Backspace') {
             userTyped = userTyped.slice(0, -1);
-            translationElement.textContent = userTyped;
-            document.body.style.backgroundImage = '';
+            if (translationElement) {
+                translationElement.textContent = userTyped;
+            }
         } else if (e.key === 'Enter') {
-            if (userTyped === currentSyllable.pt) {
+            if (userTyped === currentSyllable.answer) {
                 if (!hintUsed) {
                     if (correctSoundEnabled) {
                         correctSound.currentTime = 0;
                         correctSound.play();
                     }
                    
-                    createParticle(currentSyllableElement);
+                    if (currentSyllableElement) {
+                        createParticle(currentSyllableElement);
+                    }
                     score++;
                   
                     updateScoreDisplay();
@@ -633,27 +751,25 @@
                     }
                 }
 
-                translationElement.textContent = '';
-                currentSyllableElement.remove();
-                if (hintUsed && wrongSoundEnabled) {
+                if (translationElement) {
+                    translationElement.textContent = '';
+                }
+                if (currentSyllableElement) {
+                    currentSyllableElement.remove();
+                }
+
+                displaySyllable();
+            } else {
+                if (wrongSoundEnabled) {
                     wrongSound.currentTime = 0;
                     wrongSound.play();
                 }
-                displaySyllable();
-            } else {
-                if (currentSyllable.img) {
-                    document.body.style.backgroundImage = `url('${currentSyllable.img}')`;
-                    document.body.style.backgroundRepeat = 'no-repeat';
-                    document.body.style.backgroundPosition = 'left bottom';
-                } else {
-                    document.body.style.backgroundImage = '';
+
+                if (translationElement) {
+                    translationElement.textContent = currentSyllable.answer;
                 }
-
-                translationElement.textContent = currentSyllable.pt;
-
                 userTyped = '';
                 hintUsed = true;
-                
             }
         }
     });
