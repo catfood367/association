@@ -115,7 +115,6 @@ Acesse clicando no ícone de engrenagem no canto superior esquerdo.
 O jogo utiliza armazenamento persistente para:
 - **Preferências do usuário**: Todas as configurações são salvas automaticamente
 - **Último arquivo**: O conteúdo do último arquivo JSON carregado é preservado
-- **Progresso**: Pontuação e nível atual durante a sessão
 
 ## Tecnologias Utilizadas
 
