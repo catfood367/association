@@ -180,6 +180,11 @@
             <input type="checkbox" id="randomToggle">
         </label>
 
+        <label>
+            Reiniciar ao errar:
+            <input type="checkbox" id="restartOnWrongToggle">
+        </label>
+
         <br>
 
         <label>
@@ -240,6 +245,7 @@
     let positionHintEnabled = true;
     let darkModeEnabled = false;
     let answerTipLetters = 3;
+    let restartOnWrongEnabled = false;
     let utterance = null;
 
     const correctSound = new Audio('right.mp3');
@@ -259,6 +265,7 @@
     const colorHintToggle = document.getElementById("colorHintToggle");
     const positionHintToggle = document.getElementById("positionHintToggle");
     const darkModeToggle = document.getElementById("darkModeToggle");
+    const restartOnWrongToggle = document.getElementById("restartOnWrongToggle");
     const voiceSelect = document.getElementById('voiceSelect');
     const answerTipRange = document.getElementById('answerTipRange');
     const answerTipValue = document.getElementById('answerTipValue');
@@ -283,6 +290,11 @@
     });
     wrongSoundToggle.addEventListener('change', () => {
         wrongSoundEnabled = wrongSoundToggle.checked;
+        savePreferences();
+    });
+
+    restartOnWrongToggle.addEventListener('change', () => {
+        restartOnWrongEnabled = restartOnWrongToggle.checked;
         savePreferences();
     });
 
@@ -405,7 +417,7 @@
                 content: fileContent,
                 name: file.name
             };
-            const result = localStorage.setItem('saved_file', JSON.stringify(storageData));
+            localStorage.setItem('saved_file', JSON.stringify(storageData));
 
             fileName.textContent = file.name;
             startGame();
@@ -422,15 +434,15 @@
             positionHintEnabled,
             darkModeEnabled,
             answerTipLetters,
-            voiceIndex: voiceSelect.value
+            voiceIndex: voiceSelect.value,
+            restartOnWrongEnabled
         };
-
         localStorage.setItem('user_preferences', JSON.stringify(preferences));
     }
 
     async function loadPreferences() {
         const result = localStorage.getItem('user_preferences');
-        if (result && result) {
+        if (result) {
             const preferences = JSON.parse(result);
             
             correctSoundEnabled = preferences.correctSoundEnabled ?? true;
@@ -440,6 +452,7 @@
             positionHintEnabled = preferences.positionHintEnabled ?? true;
             darkModeEnabled = preferences.darkModeEnabled ?? false;
             answerTipLetters = preferences.answerTipLetters ?? 1;
+            restartOnWrongEnabled = preferences.restartOnWrongEnabled ?? false;
             
             correctSoundToggle.checked = correctSoundEnabled;
             wrongSoundToggle.checked = wrongSoundEnabled;
@@ -447,6 +460,7 @@
             colorHintToggle.checked = colorHintEnabled;
             positionHintToggle.checked = positionHintEnabled;
             darkModeToggle.checked = darkModeEnabled;
+            restartOnWrongToggle.checked = restartOnWrongEnabled;
             answerTipRange.value = answerTipLetters;
             answerTipValue.textContent = answerTipLetters;
             
@@ -477,14 +491,12 @@
         const hash = hashCode(str);
         const hue = (hash * 137) % 360;
         const saturation = 85 + (hash % 15);
-        
         let lightness;
         if (darkModeEnabled) {
             lightness = 60 + (hash % 16);
         } else {
             lightness = 35 + (hash % 16);
         }
-        
         return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
 
@@ -569,7 +581,6 @@
         if (currentGroup.length === 0) return null;
 
         let randomIndex;
-
         do {
             randomIndex = Math.floor(Math.random() * currentGroup.length);
         } while (currentGroup.length > 1 && randomIndex === lastPickedIndex);
@@ -659,7 +670,7 @@
 
     async function loadSavedFile() {
         const result = localStorage.getItem('saved_file');
-        if (result && result) {
+        if (result) {
             const storageData = JSON.parse(result);
             syllableList = parseSyllableData(storageData.content);
             if (syllableList.length > 0) {
@@ -736,12 +747,10 @@
                         correctSound.currentTime = 0;
                         correctSound.play();
                     }
-                   
                     if (currentSyllableElement) {
                         createParticle(currentSyllableElement);
                     }
                     score++;
-                  
                     updateScoreDisplay();
                     currentGroup.splice(currentSyllable.pickIndex, 1);
 
@@ -750,21 +759,22 @@
                         loadGroup(currentGroupIndex);
                     }
                 }
-
-                if (translationElement) {
-                    translationElement.textContent = '';
-                }
-                if (currentSyllableElement) {
-                    currentSyllableElement.remove();
-                }
-
+                if (translationElement) translationElement.textContent = '';
+                if (currentSyllableElement) currentSyllableElement.remove();
                 displaySyllable();
             } else {
+                if (restartOnWrongEnabled) {
+                    if (currentSyllableElement) currentSyllableElement.remove();
+                    if (translationElement) translationElement.remove();
+                    alert("Voce Perdeu!")
+                    startGame();
+                    return;
+                }
+
                 if (wrongSoundEnabled) {
                     wrongSound.currentTime = 0;
                     wrongSound.play();
                 }
-
                 if (translationElement) {
                     translationElement.textContent = currentSyllable.answer;
                 }
