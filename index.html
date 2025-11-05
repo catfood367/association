@@ -818,7 +818,7 @@
      * @returns {object} Stats object
      */
     function calculateDeckStats(content) {
-        const today = Date.now();
+        const today = Date.now() + 2 * 60 * 1000;
         const stats = {
             total: content.length,
             newCount: 0,
