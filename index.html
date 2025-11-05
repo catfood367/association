@@ -2,22 +2,318 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
-<title>Treino de associação</title>
+<title>Treino de associação (FSRS)</title>
 <style>
+    :root {
+        --bg-light: #f5f5f5;
+        --text-light: #000000;
+        --bg-dark: #121212;
+        --text-dark: #ffffff;
+        --surface-light: #ffffff;
+        --surface-dark: #333333;
+        --primary: rgb(0, 138, 0);
+        --secondary: rgb(0, 182, 173);
+        --danger: rgb(220, 53, 69);
+        --warning: rgb(255, 193, 7);
+    }
+    
     body {
         margin: 0;
         padding: 0;
-        background: #f5f5f5;
+        background: var(--bg-light);
+        color: var(--text-light);
         overflow: hidden;
         font-family: Arial, sans-serif;
         user-select: none;
         width: 100vw;
         height: 100vh;
-        transition: background-color 0.3s ease;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
     body.dark-mode {
-        background: #000000;
+        background: var(--bg-dark);
+        color: var(--text-dark);
     }
+
+    /* --- Modals --- */
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        z-index: 10000;
+        font-family: 'Arial Black', Arial, sans-serif;
+    }
+    .modal-content {
+        padding: 30px 40px;
+        border-radius: 15px;
+        text-align: center;
+        color: var(--text-dark);
+        max-width: 90vw;
+        width: 500px;
+        background: var(--surface-dark);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        box-sizing: border-box;
+    }
+    .modal-content h1 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
+    .modal-content label {
+        display: block;
+        margin: 15px 0 5px;
+        text-align: left;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+    .modal-content input[type="text"],
+    .modal-content input[type="range"],
+    .modal-content select {
+        width: 100%;
+        margin-top: 5px;
+        box-sizing: border-box;
+    }
+    .modal-content input[type="text"] {
+        padding: 10px;
+        border-radius: 8px;
+        border: 2px solid #555;
+        background: #444;
+        color: white;
+        font-size: 1rem;
+    }
+    .modal-content input[type="checkbox"] {
+        width: 1.2em;
+        height: 1.2em;
+        margin-left: 10px;
+    }
+
+    .btn, .btn-restart, .btn-close {
+        margin: 10px 5px 0;
+        font-size: 1rem;
+        padding: 12px 22px;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        font-weight: 900;
+        cursor: pointer;
+        transition: background-color 0.25s ease, transform 0.1s ease;
+        user-select: none;
+    }
+    .btn:active {
+        transform: scale(0.98);
+    }
+    .btn-primary { background: var(--primary); }
+    .btn-primary:hover { background: rgb(0, 168, 0); }
+    .btn-secondary { background: var(--secondary); }
+    .btn-secondary:hover { background: rgb(0, 202, 193); }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: rgb(240, 73, 89); }
+    .btn-warning { background: var(--warning); color: #000; }
+    .btn-warning:hover { background: rgb(255, 203, 37); }
+    .btn-close { background: var(--danger); }
+    
+    #voiceSelect {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-color: var(--secondary);
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        max-width: 100%;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    #answerTipValue {
+        display: inline-block;
+        margin-left: 10px;
+        font-weight: bold;
+        width: 20px;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+
+    .modal-actions-sub {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    /* --- Deck Modal --- */
+    #deckModal {
+        display: flex; /* Show by default on load */
+    }
+    #deckModal .modal-content {
+        width: 80vw;
+        max-width: 1000px;
+        height: 80vh;
+        background: var(--surface-dark);
+    }
+    #deckList {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+        overflow-y: auto;
+        height: calc(100% - 80px); /* 100% - h1 margin/padding */
+    }
+    .deck-card {
+        width: 180px;
+        height: 250px;
+        border: 2px solid #555;
+        border-radius: 12px;
+        background: #2a2a2a;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 15px;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .deck-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    .deck-card-main {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: bold;
+        cursor: pointer;
+        overflow: hidden;
+        word-break: break-word;
+    }
+    .deck-card-actions {
+        display: flex;
+        justify-content: space-around;
+        padding-top: 10px;
+        border-top: 1px solid #444;
+    }
+    .deck-action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+    }
+    .deck-action-btn svg {
+        width: 20px;
+        height: 20px;
+        fill: #999;
+        transition: fill 0.2s ease;
+    }
+    .deck-action-btn:hover svg {
+        fill: white;
+    }
+    #addDeckBtn {
+        border-style: dashed;
+        border-width: 3px;
+        border-color: #555;
+        cursor: pointer;
+        background: #222;
+    }
+    #addDeckBtn:hover {
+        background: #282828;
+        border-color: #777;
+    }
+    #addDeckBtn .plus-sign {
+        font-size: 80px;
+        color: #555;
+        line-height: 1;
+        font-weight: 200;
+        transition: color 0.2s ease;
+    }
+    #addDeckBtn:hover .plus-sign {
+        color: #777;
+    }
+
+    /* --- JSON Editor Modal --- */
+    #jsonEditorModal .modal-content {
+        width: 80vw;
+        max-width: 800px;
+    }
+    #jsonEditorTextarea {
+        width: 100%;
+        height: 50vh;
+        border: 2px solid #555;
+        border-radius: 8px;
+        background: #2a2a2a;
+        color: #f1f1f1;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9rem;
+        padding: 15px;
+        box-sizing: border-box;
+        resize:none;
+        /* scrollbar-color: [thumb-color] [track-color]; */
+        scrollbar-color: #45da00 #000000;
+        
+        /* "thin" or "auto" */
+        scrollbar-width: thin;
+    }
+    #jsonEditorTextarea.invalid {
+        border-color: var(--danger);
+        box-shadow: 0 0 10px var(--danger);
+    }
+
+    /* --- Merge Modal --- */
+    #mergeModal .modal-content {
+        width: 450px;
+    }
+    #mergeModal h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+    #mergeModal p {
+        font-size: 1.1rem;
+    }
+
+    /* --- Stats Modal --- */
+    #statsModal .modal-content {
+        width: 450px;
+        text-align: left;
+    }
+    #statsModal h1 {
+        text-align: center;
+    }
+    #statsList {
+        list-style: none;
+        padding: 0;
+        margin: 20px 0;
+    }
+    #statsList li {
+        font-size: 1.2rem;
+        padding: 10px 0;
+        border-bottom: 1px solid #444;
+        display: flex;
+        justify-content: space-between;
+    }
+    #statsList li:last-child {
+        border-bottom: none;
+    }
+    #statsList li span {
+        font-weight: bold;
+        color: var(--secondary);
+    }
+    #statsCloseBtn {
+        display: block;
+        margin: 20px auto 0;
+    }
+
+
+    /* --- Game Elements --- */
     .syllable {
         position: absolute;
         font-size: 40px;
@@ -26,6 +322,10 @@
         line-height: 1.2;
         cursor: default;
         display: inline-block;
+        color: var(--text-light);
+    }
+    body.dark-mode .syllable {
+        color: var(--text-dark);
     }
     .translation {
         font-size: 30px;
@@ -37,14 +337,20 @@
         position: absolute;
         left: 0;
         top: 100%;
+        color: var(--text-light);
     }
+    body.dark-mode .translation {
+        color: var(--text-dark);
+    }
+
+    /* --- Score Panel --- */
     #scorePanel {
         position: fixed;
         top: 10px;
         left: 10px;
-        font-size: 24px;
+        font-size: 20px;
         font-weight: bold;
-        background: rgba(0,0,0,0.6);
+        background: rgba(0,0,0,0.7);
         color: #fff;
         padding: 8px 15px;
         border-radius: 8px;
@@ -53,171 +359,184 @@
         font-family: 'Arial Black', Arial, sans-serif;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
-    #settingsBtn {
+    #currentDeckName {
+        font-size: 0.9em;
+        opacity: 0.8;
+    }
+    .panel-btn {
         cursor: pointer;
         background-color: transparent;
         border: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 30px;
+        padding: 0;
     }
-    #settingsBtn img {
-        width: 30px;
+    .panel-btn svg {
+        width: 24px;
+        height: 24px;
+        fill: #fff;
+        transition: fill 0.2s ease;
     }
-    .modal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.75);
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        z-index: 10000;
-        font-family: 'Arial Black', Arial, sans-serif;
-    }
-    .modal-content {
-        padding: 30px 40px;
-        border-radius: 15px;
-        text-align: center;
-        color: white;
-        max-width: 90vw;
-        width: 400px;
-        background: #333;
-    }
-    .modal-content h1 {
-        font-size: 2rem;
-        margin-bottom: 20px;
-    }
-    .modal-content label {
-        display: block;
-        margin-top: 10px;
-        text-align: left;
-        font-size: 1.2rem;
-    }
-    .modal-content input, .modal-content select {
-        margin-top: 5px;
-    }
-    .modal-content div {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        margin-top: 30px;
-    }
-    .btn-restart, .btn-close {
-        margin-top: 20px;
-        font-size: 1rem;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 10px;
-        background: rgb(0, 138, 0);
-        color: white;
-        font-weight: 900;
-        cursor: pointer;
-        transition: background-color 0.25s ease;
-        user-select: none;
-    }
-    .btn-close {
-        background: red;
-    }
-    #voiceSelect {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        background-color: rgb(0, 182, 173);
-        color: white;
-        padding: 12px 20px;
-        border: none;
-        border-radius: 8px;
-        max-width: 400px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    #answerTipRange {
-        width: 200px;
-    }
-    #answerTipValue {
-        display: inline-block;
-        margin-left: 10px;
-        font-weight: bold;
+    .panel-btn:hover svg {
+        fill: var(--secondary);
     }
 </style>
 </head>
 <body>
 
-<div id="congratsModal" class="modal">
+<div id="deckModal" class="modal">
     <div class="modal-content">
-        <h1>🎉 Parabéns! 🎉</h1>
-        <p>Você terminou o jogo!!!</p>
-        <button id="restartBtn" class="btn-restart">Reiniciar</button>
-    </div>
-</div>
-
-<div id="settingsModal" class="modal">
-    <div class="modal-content">
-        <label>
-            Número de letras da dica:
-            <input type="range" id="answerTipRange" min="0" max="3" value="1" step="1">
-            <span id="answerTipValue">1</span>
-        </label>
-
-        <label>
-            Dica de Cor:
-            <input type="checkbox" id="colorHintToggle" checked>
-        </label>
-
-        <label>
-            Dica de Posição:
-            <input type="checkbox" id="positionHintToggle" checked>
-        </label>
-
-        <label>
-            Ordem Aleatória:
-            <input type="checkbox" id="randomToggle">
-        </label>
-
-        <label>
-            Reiniciar ao errar:
-            <input type="checkbox" id="restartOnWrongToggle">
-        </label>
-
-        <br>
-
-        <label>
-            Som de Acerto:
-            <input type="checkbox" id="correctSoundToggle" checked>
-        </label>
-
-        <label>
-            Som de Erro:
-            <input type="checkbox" id="wrongSoundToggle" checked>
-        </label>
-
-        <label>
-            Modo Escuro:
-            <input type="checkbox" id="darkModeToggle">
-        </label>
-
-        <label style="margin-top:30px;">
-            Voz da leitura: &nbsp;<select id="voiceSelect"></select>
-        </label>
-
-        <div>
-            <label>
-                Arquivo selecionado:
-                <span id="fileName">Nenhum</span>
-            </label>
-            <button id="fileSelectBtn" class="btn-restart">Selecionar Arquivo</button>
+        <h1>Selecione um Deck</h1>
+        <div id="deckList">
+            <div id="addDeckBtn" class="deck-card">
+                <div class="plus-sign">+</div>
+            </div>
         </div>
     </div>
 </div>
 
+<div id="congratsModal" class="modal">
+    <div class="modal-content">
+        <h1>🎉 Parabéns! 🎉</h1>
+        <p id="congratsMessage">Você terminou o jogo!!!</p>
+        <button id="restartBtn" class="btn btn-primary">Reiniciar</button>
+    </div>
+</div>
+
+<div id="statsModal" class="modal">
+    <div class="modal-content">
+        <h1 id="statsDeckName">Estatísticas</h1>
+        <ul id="statsList">
+            <li>Total de Cartões: <span id="statsTotal">0</span></li>
+            <li>Novos: <span id="statsNew">0</span></li>
+            <li>Aprendendo: <span id="statsLearning">0</span></li>
+            <li>Revisão: <span id="statsDue">0</span></li>
+            <li>Maduros: <span id="statsMature">0</span></li>
+        </ul>
+        <button id="statsCloseBtn" class="btn btn-primary">Fechar</button>
+    </div>
+</div>
+
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <label for="deckNameInput">Nome do Deck</label>
+        <input type="text" id="deckNameInput" placeholder="Ex: Vocabulário Japonês" style="margin-bottom: 10px;">
+        
+        <label style="color: var(--warning);">
+            Modo Avaliativo (FSRS):
+            <input type="checkbox" id="evaluativeModeToggle">
+        </label>
+        
+        <hr style="border: 1px solid #555; margin: 20px 0;">
+
+        <div id="freeModeSettings">
+            <label>
+                Dica de Letras (Modo Livre):
+                <span id="answerTipValue">1</span>
+                <input type="range" id="answerTipRange" min="0" max="3" value="1" step="1">
+            </label>
+            <label>
+                Dica de Cor (Modo Livre):
+                <input type="checkbox" id="colorHintToggle" checked>
+            </label>
+            <label>
+                Dica de Posição (Modo Livre):
+                <input type="checkbox" id="positionHintToggle" checked>
+            </label>
+            <label>
+                Ordem Aleatória (Modo Livre):
+                <input type="checkbox" id="randomToggle">
+            </label>
+            <label>
+                Reiniciar ao errar (Modo Livre):
+                <input type="checkbox" id="restartOnWrongToggle">
+            </label>
+        </div>
+        
+        <br>
+        <label>
+            Som de Acerto:
+            <input type="checkbox" id="correctSoundToggle" checked>
+        </label>
+        <label>
+            Som de Erro:
+            <input type="checkbox" id="wrongSoundToggle" checked>
+        </label>
+        <label>
+            Modo Escuro:
+            <input type="checkbox" id="darkModeToggle">
+        </label>
+        <br>
+        <label>
+            Voz da leitura:
+            <select id="voiceSelect"></select>
+        </label>
+
+        <div style="margin-top: 20px;">
+            <label>
+                Conteúdo do Deck:
+                <span id="fileName">Nenhum</span>
+            </label>
+            <button id="editJsonBtn" class="btn btn-secondary" style="width: 100%; margin: 0;">Editar/Importar JSON</button>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 30px;">
+            <button id="cancelSettingsBtn" class="btn btn-danger">Cancelar</button>
+            <button id="saveDeckBtn" class="btn btn-primary">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<div id="jsonEditorModal" class="modal">
+    <div class="modal-content">
+        <h1>Editar Conteúdo JSON</h1>
+        <textarea id="jsonEditorTextarea" placeholder='[
+    {
+        "question": "palavra1",
+        "answer": "word1"
+    },
+    {
+        "question": "palavra2",
+        "answer": "word2"
+    }
+]'></textarea>
+        <div class="modal-actions">
+            <button id="importJsonBtn" class="btn btn-secondary">Importar Arquivo...</button>
+            <div class="modal-actions-sub">
+                <button id="cancelJsonBtn" class="btn btn-danger">Cancelar</button>
+                <button id="saveJsonBtn" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mergeModal" class="modal">
+    <div class="modal-content" style="width: 600px !important;">
+        <h2>Importar JSON</h2>
+        <p>O editor já contém dados. Você quer mesclar o novo arquivo ou sobrescrever?</p>
+        <div class="modal-actions" style="margin-top: 20px !important;">
+            <button id="cancelMergeBtn" class="btn btn-danger">Cancelar</button>
+            <div class="modal-actions-sub" >
+                <button id="overwriteBtn" class="btn btn-warning">Sobrescrever</button>
+                 <button id="mergeBtn" class="btn btn-primary">Mesclar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div id="scorePanel">
-    <button id="settingsBtn"><img src="https://static.vecteezy.com/system/resources/previews/047/429/167/non_2x/blue-settings-icon-free-png.png" alt=""></button>
+    <button id="deckSelectBtn" class="panel-btn" title="Voltar para seleção de decks">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-6h-8v10zm0-18v6h8V3h-8z"/></svg>
+    </button>
+    <button id="settingsBtn" class="panel-btn" title="Configurações do Deck Atual">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.08.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+    </button>
+    <span id="currentDeckName">Nenhum Deck</span>
     <span id="scoreText">| Pontuação: 0 | Level: 0 / 0</span>
 </div>
 
@@ -225,40 +544,79 @@
 
 <script>
 (() => {
+    // --- Constants ---
     const groupSize = 5;
+    const DECK_STORAGE_KEY = 'association_game_decks_fsrs'; // Changed key to avoid conflicts
+    const OLD_FILE_KEY = 'saved_file';
+    const OLD_PREFS_KEY = 'user_preferences';
 
-    let syllableList = [];
-    let currentGroupIndex = 0;
-    let currentGroup = [];
-    let currentSyllable = null;
+    // --- Game State ---
+    let allDecks = [];
+    let currentDeckId = null;
+    let syllableList = []; // Full list of cards from deck.content
+    let currentGroupIndex = 0; // For free mode
+    let currentGroup = []; // For free mode
+    let sessionReviewQueue = []; // For FSRS mode 'Again' cards
+    let currentSyllable = null; // The current card object { question, answer, s, d, ... }
     let currentSyllableElement = null;
     let translationElement = null;
     let userTyped = '';
     let score = 0;
     let hintUsed = false;
+    let cardStartTime = 0; // For FSRS timing
 
+    // --- Settings State (Game) ---
     let selectedVoice = null;
     let correctSoundEnabled = true;
     let wrongSoundEnabled = true;
-    let randomToggleEnabled = false;
-    let colorHintEnabled = true;
-    let positionHintEnabled = true;
+    let randomToggleEnabled = false; // Free mode
+    let colorHintEnabled = true; // Free mode
+    let positionHintEnabled = true; // Free mode
     let darkModeEnabled = false;
-    let answerTipLetters = 3;
-    let restartOnWrongEnabled = false;
+    let answerTipLetters = 1; // Free mode
+    let restartOnWrongEnabled = false; // Free mode
+    let evaluativeModeEnabled = false; // FSRS mode toggle
     let utterance = null;
 
+    // --- Settings Modal State ---
+    let editModeDeckId = null;
+    let pendingDeckContent = null;
+    let pendingFileName = null;
+    let importCache = { content: null, name: null };
+
+    // --- Audio ---
     const correctSound = new Audio('right.mp3');
     const wrongSound = new Audio('wrong.mp3');
 
+    // --- DOM Elements ---
     const scoreText = document.getElementById('scoreText');
     const fileInput = document.getElementById('fileInput');
-    const fileName = document.getElementById('fileName');
-
+    const fileNameSpan = document.getElementById('fileName');
+    const currentDeckNameSpan = document.getElementById('currentDeckName');
+    
+    // Modals
+    const deckModal = document.getElementById('deckModal');
     const settingsModal = document.getElementById('settingsModal');
-    const settingsBtn = document.getElementById('settingsBtn');
-    const fileSelectBtn = document.getElementById('fileSelectBtn');
+    const congratsModal = document.getElementById('congratsModal');
+    const congratsMessage = document.getElementById('congratsMessage');
+    const jsonEditorModal = document.getElementById('jsonEditorModal');
+    const mergeModal = document.getElementById('mergeModal');
+    const statsModal = document.getElementById('statsModal');
 
+    // Score Panel Buttons
+    const settingsBtn = document.getElementById('settingsBtn');
+    const deckSelectBtn = document.getElementById('deckSelectBtn');
+    
+    // Deck Modal Buttons
+    const deckList = document.getElementById('deckList');
+    const addDeckBtn = document.getElementById('addDeckBtn');
+
+    // Settings Modal Elements
+    const editJsonBtn = document.getElementById('editJsonBtn');
+    const saveDeckBtn = document.getElementById('saveDeckBtn');
+    const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+    const deckNameInput = document.getElementById('deckNameInput');
+    
     const correctSoundToggle = document.getElementById('correctSoundToggle');
     const wrongSoundToggle = document.getElementById('wrongSoundToggle');
     const randomToggle = document.getElementById("randomToggle");
@@ -266,9 +624,853 @@
     const positionHintToggle = document.getElementById("positionHintToggle");
     const darkModeToggle = document.getElementById("darkModeToggle");
     const restartOnWrongToggle = document.getElementById("restartOnWrongToggle");
+    const evaluativeModeToggle = document.getElementById("evaluativeModeToggle");
     const voiceSelect = document.getElementById('voiceSelect');
     const answerTipRange = document.getElementById('answerTipRange');
     const answerTipValue = document.getElementById('answerTipValue');
+    const freeModeSettings = document.getElementById('freeModeSettings'); // NEW DOM ELEMENT
+    
+    // Congrats Modal
+    const restartBtn = document.getElementById('restartBtn');
+
+    // JSON Editor Modal Elements
+    const jsonEditorTextarea = document.getElementById('jsonEditorTextarea');
+    const importJsonBtn = document.getElementById('importJsonBtn');
+    const cancelJsonBtn = document.getElementById('cancelJsonBtn');
+    const saveJsonBtn = document.getElementById('saveJsonBtn');
+    
+    // Merge Modal Elements
+    const cancelMergeBtn = document.getElementById('cancelMergeBtn');
+    const overwriteBtn = document.getElementById('overwriteBtn');
+    const mergeBtn = document.getElementById('mergeBtn');
+
+    // Stats Modal Elements
+    const statsCloseBtn = document.getElementById('statsCloseBtn');
+    const statsDeckName = document.getElementById('statsDeckName');
+    const statsTotal = document.getElementById('statsTotal');
+    const statsNew = document.getElementById('statsNew');
+    const statsLearning = document.getElementById('statsLearning');
+    const statsDue = document.getElementById('statsDue');
+    const statsMature = document.getElementById('statsMature');
+
+
+    // --- FSRS & Helper Functions ---
+
+    /**
+     * Calculates the Levenshtein distance between two strings.
+     */
+    function levenshtein(a, b) {
+        const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+        for (let i = 0; i <= a.length; i++) { matrix[0][i] = i; }
+        for (let j = 0; j <= b.length; j++) { matrix[j][0] = j; }
+        for (let j = 1; j <= b.length; j++) {
+            for (let i = 1; i <= a.length; i++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j][i - 1] + 1,      // deletion
+                    matrix[j - 1][i] + 1,      // insertion
+                    matrix[j - 1][i - 1] + cost // substitution
+                );
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+    
+    /**
+     * Calculates the probability of remembering (Retention R) for a card.
+     * Prioritizes the card selection for FSRS mode.
+     * @param {object} card - The card object
+     * @returns {number} Retention (0.0 to 1.0)
+     */
+    function calculateRetention(card) {
+        if (!card.lastReview || card.s === undefined || card.s <= 0.1) {
+            return 1.0; 
+        }
+        
+        const now = Date.now();
+        // Interval in days: (Current Time - Last Review Time) / (milliseconds per day)
+        const intervalDays = (now - card.lastReview) / (24 * 60 * 60 * 1000); 
+        
+        // FSRS Retention Formula: R = e^(-Interval / Stability)
+        // Card.s is Stability in days
+        return Math.exp(-intervalDays / card.s); 
+    }
+
+    /**
+     * Calculates a performance grade (0-3) based on similarity and time.
+     * @param {number} similarity - Normalized similarity (0.0 to 1.0)
+     * @param {number} time - Time taken in seconds
+     * @returns {number} Grade (0: Again, 1: Hard, 2: Good, 3: Easy)
+     */
+    function calculateGrade(similarity, time) {
+        if (similarity < 0.7) return 0; // Again
+        if (similarity >= 0.7 && similarity < 1.0) return 1; // Hard (erro menor)
+
+        // Similaridade perfeita → tempo influencia grade
+        if (similarity === 1) {
+            if (time < 4) return 3;  // Easy: muito rápido
+            if (time < 10) return 2; // Good: rápido o suficiente
+            return 1;                 // Hard: lento, reforçar
+        }
+
+        return 1; // fallback
+    }
+    /**
+     * Updates the FSRS parameters (s, d, dueDate) for a card based on its grade.
+     * @param {object} card - The card object
+     * @param {number} grade - The grade (0-3)
+     */
+    function updateFsrsData(card, grade) {
+        // Ensure card has FSRS properties
+        card.s = card.s ?? 0.1; // Stability (in days)
+        card.d = card.d ?? 0.5; // Difficulty (0-1)
+        
+        // 1. Update Difficulty
+          // 2. Atualiza estabilidade (card.s)
+        if (grade === 0) { // Again
+            card.s = Math.max(0.1, card.s * 0.4);
+        } else if (grade === 1) { // Hard
+            card.s = Math.max(0.5, card.s * 1.1);
+        } else if (grade === 2) { // Good
+            const factorGood = 1.3 + 0.5 * (1 - card.d);
+            card.s = Math.max(1, (card.s + 1) * factorGood);
+        } else { // Easy
+            const factorEasy = 1.5 + 0.5 * (1 - card.d);
+            card.s = Math.max(1, (card.s + 2) * factorEasy);
+        }
+
+            // 3. Atualiza dificuldade (card.d)
+         card.d = Math.max(0, Math.min(1, card.d + [0.1, 0.05, -0.05, -0.15][grade]));
+        // 3. Update Review Dates
+
+        
+        card.lastReview = Date.now();
+            let multiplier;
+
+        if (grade === 0) {
+            // Review again in 2 minutes
+            card.dueDate = Date.now() + 2 * 60 * 1000;
+        } else {
+    // Ajusta intervalo com base no grade (tempo de resposta influencia grade)
+            if (grade === 1) multiplier = 0.8; // Hard → reforço mais cedo
+            else if (grade === 2) multiplier = 1.0; // Good → padrão
+            else multiplier = 1.2; // Easy → espaça mais
+
+            card.dueDate = Date.now() + card.s * multiplier * 24 * 60 * 60 * 1000;
+        }
+    }
+
+    /**
+     * Picks the next card to review based on FSRS logic.
+     * @returns {object | null} The card to review, or null if none.
+     */
+    function pickFsrsCard() {
+        const today = Date.now();
+        const deck = allDecks.find(d => d.id === currentDeckId);
+        if (!deck) return null;
+
+        const allCards = deck.content;
+
+
+        // 2. Cards due for review (Prioritize lowest retention R score)
+        const dueCards = allCards.filter(c => c.dueDate && c.dueDate <= today);
+        if (dueCards.length > 0) {
+            
+            let bestCard = null;
+            let minRetention = Infinity;
+
+            // Find the card with the lowest probability of remembering (R)
+            for (const card of dueCards) {
+                const retention = calculateRetention(card);
+                if (retention < minRetention) {
+                    minRetention = retention;
+                    bestCard = card;
+                }
+            }
+            // Pick the one with the lowest retention (most urgent)
+            return bestCard;
+        }
+
+        // 3. New cards
+        const newCards = allCards.filter(c => !c.lastReview);
+        if (newCards.length > 0) {
+            // Pick a random new card
+            return newCards[Math.floor(Math.random() * newCards.length)];
+        }
+
+        // 4. No cards due and no new cards
+        return null;
+    }
+
+    /**
+     * Calculates statistics for a deck.
+     * @param {Array} content - The deck's content array
+     * @returns {object} Stats object
+     */
+    function calculateDeckStats(content) {
+        const today = Date.now();
+        const stats = {
+            total: content.length,
+            newCount: 0,
+            dueCount: 0,
+            learningCount: 0,
+            matureCount: 0
+        };
+
+        for (const card of content) {
+            if (!card.lastReview) {
+                stats.newCount++;
+            } else {
+                if (card.dueDate && card.dueDate <= today) {
+                    stats.dueCount++;
+                }
+                if (card.s < 7) { // Stability < 7 days
+                    stats.learningCount++;
+                } else if (card.s >= 21) { // Stability >= 21 days
+                    stats.matureCount++;
+                }
+            }
+        }
+        return stats;
+    }
+
+    /**
+     * Ensures all cards in a deck have FSRS properties.
+     * @param {object} deck - The deck object
+     */
+    function migrateDeckContentIfNeeded(deck) {
+        if (!deck || !deck.content || deck.content.length === 0) return;
+
+        let needsMigration = false;
+        // Check first card. If it's missing 's', assume all are.
+        if (deck.content[0].s === undefined) {
+            needsMigration = true;
+        }
+
+        if (needsMigration) {
+            console.log(`Migrando deck: ${deck.name}`);
+            deck.content = deck.content.map(card => ({
+                question: card.question,
+                answer: card.answer,
+                s: 0.1,
+                d: 0.5,
+                lastReview: null,
+                dueDate: null
+            }));
+            saveDecks();
+        }
+    }
+
+
+    // --- Deck Management ---
+
+    function migrateOldData() {
+        const oldFile = localStorage.getItem(OLD_FILE_KEY);
+        const oldPrefs = localStorage.getItem(OLD_PREFS_KEY);
+
+        if (oldFile && oldPrefs) {
+            try {
+                const fileData = JSON.parse(oldFile);
+                const prefsData = JSON.parse(oldPrefs);
+
+                const migratedDeck = {
+                    id: 'migrated_' + Date.now(),
+                    name: fileData.name || "Deck Migrado",
+                    fileName: fileData.name || "Arquivo Migrado",
+                    content: fileData.content, // Will be migrated on load
+                    settings: {
+                        correctSoundEnabled: prefsData.correctSoundEnabled ?? true,
+                        wrongSoundEnabled: prefsData.wrongSoundEnabled ?? true,
+                        randomToggleEnabled: prefsData.randomToggleEnabled ?? false,
+                        colorHintEnabled: prefsData.colorHintEnabled ?? true,
+                        positionHintEnabled: prefsData.positionHintEnabled ?? true,
+                        darkModeEnabled: prefsData.darkModeEnabled ?? false,
+                        answerTipLetters: prefsData.answerTipLetters ?? 1,
+                        restartOnWrongEnabled: prefsData.restartOnWrongEnabled ?? false,
+                        evaluativeModeEnabled: false, // Default to false
+                        voiceIndex: prefsData.voiceIndex ?? 'none'
+                    }
+                };
+                
+                allDecks.push(migratedDeck);
+                saveDecks();
+
+                localStorage.removeItem(OLD_FILE_KEY);
+                localStorage.removeItem(OLD_PREFS_KEY);
+            } catch (e) {
+                console.error("Erro ao migrar dados antigos:", e);
+            }
+        }
+    }
+
+    function loadDecks() {
+        const decksJson = localStorage.getItem(DECK_STORAGE_KEY);
+        allDecks = decksJson ? JSON.parse(decksJson) : [];
+    }
+
+    function saveDecks() {
+        localStorage.setItem(DECK_STORAGE_KEY, JSON.stringify(allDecks));
+    }
+
+    function renderDeckModal() {
+        deckList.innerHTML = ''; // Clear existing cards
+
+        allDecks.forEach(deck => {
+            const card = document.createElement('div');
+            card.className = 'deck-card';
+            card.innerHTML = `
+                <div class="deck-card-main" data-deck-id="${deck.id}">
+                    ${deck.name}
+                </div>
+                <div class="deck-card-actions">
+                    <button class="deck-action-btn stats" data-deck-id="${deck.id}" title="Estatísticas">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+                    </button>
+                    <button class="deck-action-btn edit" data-deck-id="${deck.id}" title="Editar Deck">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
+                    <button class="deck-action-btn delete" data-deck-id="${deck.id}" title="Deletar Deck">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            `;
+            deckList.appendChild(card);
+        });
+        
+        deckList.appendChild(addDeckBtn); // Re-append the "Add" button
+
+        // Add event listeners for new cards
+        document.querySelectorAll('.deck-card-main').forEach(btn => btn.addEventListener('click', handleSelectDeck));
+        document.querySelectorAll('.deck-action-btn.stats').forEach(btn => btn.addEventListener('click', handleShowStats));
+        document.querySelectorAll('.deck-action-btn.edit').forEach(btn => btn.addEventListener('click', handleEditDeck));
+        document.querySelectorAll('.deck-action-btn.delete').forEach(btn => btn.addEventListener('click', handleDeleteDeck));
+    }
+
+    function handleSelectDeck(e) {
+        const deckId = e.currentTarget.dataset.deckId;
+        const selectedDeck = allDecks.find(d => d.id === deckId);
+
+        if (!selectedDeck) return;
+        
+        // Migrate content if this is an old deck
+        migrateDeckContentIfNeeded(selectedDeck);
+        
+        if (!selectedDeck.content || selectedDeck.content.length === 0) {
+            alert('Deck sem conteúdo. Edite o deck para adicionar um.');
+            return;
+        }
+        
+        currentDeckId = deckId;
+        syllableList = selectedDeck.content; // This is now the full list of card objects
+
+        applyDeckSettingsToGame(selectedDeck.settings);
+        currentDeckNameSpan.textContent = selectedDeck.name;
+        deckModal.style.display = 'none';
+        startGame();
+    }
+
+    function handleEditDeck(e) {
+        e.stopPropagation();
+        const deckId = e.currentTarget.dataset.deckId;
+        openSettingsModal(deckId);
+    }
+    
+    function handleShowStats(e) {
+        e.stopPropagation();
+        const deckId = e.currentTarget.dataset.deckId;
+        const deck = allDecks.find(d => d.id === deckId);
+        if (!deck) return;
+
+        migrateDeckContentIfNeeded(deck);
+        const stats = calculateDeckStats(deck.content);
+        
+        statsDeckName.textContent = `Estatísticas: ${deck.name}`;
+        statsTotal.textContent = stats.total;
+        statsNew.textContent = stats.newCount;
+        statsLearning.textContent = stats.learningCount;
+        statsDue.textContent = stats.dueCount;
+        statsMature.textContent = stats.matureCount;
+        
+        statsModal.style.display = 'flex';
+    }
+    
+    statsCloseBtn.addEventListener('click', () => {
+        statsModal.style.display = 'none';
+    });
+
+
+    function handleDeleteDeck(e) {
+        e.stopPropagation();
+        const deckId = e.currentTarget.dataset.deckId;
+        // Use custom modal for confirm soon
+        if (confirm(`Tem certeza que quer deletar o deck "${allDecks.find(d => d.id === deckId).name}"?`)) {
+            allDecks = allDecks.filter(d => d.id !== deckId);
+            saveDecks();
+            renderDeckModal();
+            if (deckId === currentDeckId) {
+                // If we deleted the active deck, reset game
+                currentDeckId = null;
+                currentDeckNameSpan.textContent = "Nenhum Deck";
+                if (currentSyllableElement) currentSyllableElement.remove();
+            }
+        }
+    }
+
+    // --- Settings Modal ---
+
+    /**
+     * Toggles the visibility/usability of the Free Mode hint settings.
+     * @param {boolean} evaluativeMode - true if FSRS mode is enabled
+     */
+    function toggleHintOptions(evaluativeMode) {
+        if (freeModeSettings) {
+            freeModeSettings.style.pointerEvents = evaluativeMode ? 'none' : 'auto';
+            freeModeSettings.style.opacity = evaluativeMode ? '0.5' : '1';
+        }
+    }
+
+    function openSettingsModal(deckId = null) {
+        if (deckId) { // Edit Mode
+            editModeDeckId = deckId;
+            const deck = allDecks.find(d => d.id === deckId);
+            if (!deck) return;
+
+            migrateDeckContentIfNeeded(deck); // Ensure FSRS data exists
+            
+            deckNameInput.value = deck.name;
+            pendingDeckContent = deck.content ? JSON.stringify(deck.content) : null; // Load existing content
+            pendingFileName = deck.fileName;
+            fileNameSpan.textContent = deck.fileName || 'Conteúdo Salvo';
+            applySettingsToModalUI(deck.settings);
+            
+            // Apply initial toggle state
+            toggleHintOptions(deck.settings.evaluativeModeEnabled);
+            
+        } else { // Create Mode
+            editModeDeckId = null;
+            deckNameInput.value = '';
+            pendingDeckContent = null; // Reset
+            pendingFileName = null;
+            fileNameSpan.textContent = 'Nenhum';
+            
+            const defaults = readSettingsFromUI(); // Get current UI state/defaults
+            applySettingsToModalUI(defaults);
+            
+            // Apply initial toggle state
+            toggleHintOptions(defaults.evaluativeModeEnabled);
+        }
+        
+        settingsModal.style.display = 'flex';
+    }
+
+    function applySettingsToModalUI(settings) {
+        const defaults = {
+            correctSoundEnabled: true,
+            wrongSoundEnabled: true,
+            randomToggleEnabled: false,
+            colorHintEnabled: true,
+            positionHintEnabled: true,
+            darkModeEnabled: false,
+            answerTipLetters: 1,
+            restartOnWrongEnabled: false,
+            evaluativeModeEnabled: false,
+            voiceIndex: 'none'
+        };
+
+        const s = settings || defaults;
+        
+        correctSoundToggle.checked = s.correctSoundEnabled;
+        wrongSoundToggle.checked = s.wrongSoundEnabled;
+        randomToggle.checked = s.randomToggleEnabled;
+        colorHintToggle.checked = s.colorHintEnabled;
+        positionHintToggle.checked = s.positionHintEnabled;
+        darkModeToggle.checked = s.darkModeEnabled;
+        restartOnWrongToggle.checked = s.restartOnWrongEnabled;
+        evaluativeModeToggle.checked = s.evaluativeModeEnabled;
+        answerTipRange.value = s.answerTipLetters;
+        answerTipValue.textContent = s.answerTipLetters;
+        
+        setTimeout(() => {
+            voiceSelect.value = s.voiceIndex;
+            if (!voiceSelect.value && voiceSelect.options.length > 0) {
+                voiceSelect.value = 'none';
+            }
+        }, 200);
+    }
+
+    function readSettingsFromUI() {
+        return {
+            correctSoundEnabled: correctSoundToggle.checked,
+            wrongSoundEnabled: wrongSoundToggle.checked,
+            randomToggleEnabled: randomToggle.checked,
+            colorHintEnabled: colorHintToggle.checked,
+            positionHintEnabled: positionHintToggle.checked,
+            darkModeEnabled: darkModeToggle.checked,
+            answerTipLetters: parseInt(answerTipRange.value),
+            restartOnWrongEnabled: restartOnWrongToggle.checked,
+            evaluativeModeEnabled: evaluativeModeToggle.checked,
+            voiceIndex: voiceSelect.value
+        };
+    }
+    
+    function applyDeckSettingsToGame(settings) {
+        correctSoundEnabled = settings.correctSoundEnabled ?? true;
+        wrongSoundEnabled = settings.wrongSoundEnabled ?? true;
+        randomToggleEnabled = settings.randomToggleEnabled ?? false;
+        colorHintEnabled = settings.colorHintEnabled ?? true;
+        positionHintEnabled = settings.positionHintEnabled ?? true;
+        darkModeEnabled = settings.darkModeEnabled ?? false;
+        answerTipLetters = settings.answerTipLetters ?? 1;
+        restartOnWrongEnabled = settings.restartOnWrongEnabled ?? false;
+        evaluativeModeEnabled = settings.evaluativeModeEnabled ?? false;
+
+        document.body.classList.toggle('dark-mode', darkModeEnabled);
+        
+        if (settings.voiceIndex && settings.voiceIndex !== 'none') {
+            setTimeout(() => {
+                voiceSelect.value = settings.voiceIndex;
+                selectVoice();
+            }, 500);
+        } else {
+            voiceSelect.value = 'none';
+            selectVoice();
+        }
+    }
+    
+    function saveCurrentDeckSettings() {
+        if (!currentDeckId) return;
+        const deck = allDecks.find(d => d.id === currentDeckId);
+        if (!deck) return;
+
+        // Read all settings from UI (since modal isn't open, read from game state)
+        deck.settings = {
+            correctSoundEnabled: correctSoundEnabled,
+            wrongSoundEnabled: wrongSoundEnabled,
+            randomToggleEnabled: randomToggleEnabled,
+            colorHintEnabled: colorHintEnabled,
+            positionHintEnabled: positionHintEnabled,
+            darkModeEnabled: darkModeEnabled,
+            answerTipLetters: answerTipLetters,
+            restartOnWrongEnabled: restartOnWrongEnabled,
+            evaluativeModeEnabled: evaluativeModeEnabled,
+            voiceIndex: voiceSelect.value
+        };
+        
+        saveDecks();
+    }
+
+    saveDeckBtn.addEventListener('click', () => {
+        const deckName = deckNameInput.value.trim();
+        if (!deckName) {
+            alert('Por favor, dê um nome ao deck.');
+            return;
+        }
+        
+        const settings = readSettingsFromUI();
+        
+        // 1. Parse the new content (only Q&A)
+        let newContentQAOnly = [];
+        try {
+            newContentQAOnly = pendingDeckContent ? JSON.parse(pendingDeckContent) : [];
+            if (!Array.isArray(newContentQAOnly)) throw new Error('Conteúdo JSON inválido.');
+        } catch (e) {
+            alert("Erro ao salvar: Conteúdo JSON parece ser inválido.");
+            return;
+        }
+
+        // --- Deduplication and Filtering (using Q+A key) ---
+        const qaKeys = new Set();
+        let hasDuplicates = false;
+        const filteredContent = newContentQAOnly.filter(card => {
+            const q = (card.question || "").trim();
+            const a = (card.answer || "").trim();
+            if (q && a) {
+                 const key = q + "::" + a;
+                 if (qaKeys.has(key)) {
+                    hasDuplicates = true;
+                    return false; // Filter out duplicates
+                 }
+                 qaKeys.add(key);
+                 return true;
+            }
+            return false; // Filter out cards with empty Q or A
+        });
+        
+        if (hasDuplicates) {
+            alert("Atenção: Cartões duplicados (Mesma Pergunta e Resposta) foram removidos. Por favor, corrija o JSON para evitar a perda de dados FSRS.");
+        }
+        newContentQAOnly = filteredContent; // Use the deduplicated, cleaned array
+        // ----------------------------------------------------
+        
+        if (editModeDeckId) {
+            // Update Existing Deck - FSRS Preservation/Reset Logic
+            const deck = allDecks.find(d => d.id === editModeDeckId);
+            if (!deck) return;
+
+            // 2. Get the current card list with FSRS data
+            const oldContentWithFSRS = deck.content || [];
+            
+            // 3. Create a map for quick lookup of existing FSRS data by unique key (Q+A)
+            const oldCardMap = new Map();
+            oldContentWithFSRS.forEach(card => {
+                const q = (card.question || "").trim();
+                const a = (card.answer || "").trim();
+                const key = q + "::" + a;
+                // Only store valid cards
+                if (q && a) oldCardMap.set(key, card);
+            });
+            
+            // 4. Build the final merged content with FSRS data
+            const finalContent = newContentQAOnly.map(newCard => {
+                const q = (newCard.question || "").trim();
+                const a = (newCard.answer || "").trim();
+                const key = q + "::" + a;
+
+                // Attempt to find a match (preserves FSRS data)
+                const matchedOldCard = oldCardMap.get(key);
+                
+                if (matchedOldCard) {
+                    // Found a match: retain the full card object with its existing FSRS data
+                    return matchedOldCard; 
+                } else {
+                    // No match (new card or Q/A was modified): Reset FSRS data
+                    return {
+                        question: q,
+                        answer: a,
+                        s: 0.1,
+                        d: 0.5,
+                        lastReview: null,
+                        dueDate: null
+                    };
+                }
+            });
+
+            deck.name = deckName;
+            deck.settings = settings;
+            deck.fileName = pendingFileName;
+            deck.content = finalContent; // Save the newly generated array
+            
+        } else {
+            // Create New Deck - FSRS Initialization Logic
+            if (newContentQAOnly.length === 0) {
+                alert('Por favor, adicione conteúdo JSON ao deck usando o botão "Editar/Importar JSON".');
+                return;
+            }
+            
+            // Initialize new content with FSRS format
+            const newContentWithFSRS = newContentQAOnly.map(card => ({
+                question: (card.question || "").trim(),
+                answer: (card.answer || "").trim(),
+                s: 0.1,
+                d: 0.5,
+                lastReview: null,
+                dueDate: null
+            }));
+            
+            const newDeck = {
+                id: 'deck_' + Date.now(),
+                name: deckName,
+                fileName: pendingFileName,
+                content: newContentWithFSRS,
+                settings: settings
+            };
+            allDecks.push(newDeck);
+        }
+        
+        saveDecks();
+        renderDeckModal();
+        settingsModal.style.display = 'none';
+
+        // If we just edited the *currently running* deck, reload it
+        if (editModeDeckId && editModeDeckId === currentDeckId) {
+            const updatedDeck = allDecks.find(d => d.id === currentDeckId);
+            syllableList = updatedDeck.content;
+            applyDeckSettingsToGame(updatedDeck.settings);
+            currentDeckNameSpan.textContent = updatedDeck.name;
+            startGame();
+        }
+    });
+
+    // --- JSON Editor & Import Logic ---
+
+    function prettyPrintJson(jsonString) {
+        try {
+            const obj = JSON.parse(jsonString);
+            return JSON.stringify(obj, null, 2);
+        } catch (e) {
+            return jsonString; // Return original if parsing fails
+        }
+    }
+
+    editJsonBtn.addEventListener('click', () => {
+        // Stop if there's no pending content to edit
+        if (!pendingDeckContent) {
+            jsonEditorTextarea.value = ''; // Ensure it's empty if no content
+            jsonEditorTextarea.classList.remove('invalid');
+            jsonEditorModal.style.display = 'flex';
+            return;
+        }
+
+        try {
+            // 1. Parse the JSON string into a JavaScript array of card objects.
+            const contentArray = JSON.parse(pendingDeckContent);
+            
+            // 2. Map over the array to create a new array containing only 'question' and 'answer'.
+            const cleanedContent = contentArray.map(card => {
+                // Ensure card is an object and has the required keys before cleaning
+                if (typeof card === 'object' && card.question && card.answer) {
+                    return {
+                        question: (card.question || "").trim(),
+                        answer: (card.answer || "").trim()
+                    };
+                }
+                // Only return valid card formats
+                return null; 
+            }).filter(card => card !== null); // Filter out invalid entries
+
+            // 3. Set the textarea value using the cleaned content stringified and prettified.
+            jsonEditorTextarea.value = prettyPrintJson(JSON.stringify(cleanedContent));
+            
+        } catch (e) {
+            // If parsing the pendingDeckContent fails (it should not, but just in case)
+            console.error("Error cleaning and prepping JSON for editor:", e);
+            jsonEditorTextarea.value = pendingDeckContent; // Load raw content if cleaning fails
+        }
+        
+        jsonEditorTextarea.classList.remove('invalid');
+        jsonEditorModal.style.display = 'flex';
+    });
+
+    importJsonBtn.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async evt => {
+            importCache.content = evt.target.result;
+            importCache.name = file.name;
+            
+            const existingContent = jsonEditorTextarea.value.trim();
+            if (existingContent) {
+                // Already content, ask to merge/overwrite
+                mergeModal.style.display = 'flex';
+            } else {
+                // Editor is empty, just load the file
+                jsonEditorTextarea.value = prettyPrintJson(importCache.content);
+                pendingFileName = importCache.name;
+            }
+        };
+        reader.readAsText(file);
+        fileInput.value = null; // Reset input
+    });
+
+    cancelMergeBtn.addEventListener('click', () => {
+        mergeModal.style.display = 'none';
+        importCache = { content: null, name: null };
+    });
+
+    overwriteBtn.addEventListener('click', () => {
+        jsonEditorTextarea.value = prettyPrintJson(importCache.content);
+        pendingFileName = importCache.name;
+        mergeModal.style.display = 'none';
+        importCache = { content: null, name: null };
+    });
+
+    mergeBtn.addEventListener('click', () => {
+        try {
+            const existingArray = JSON.parse(jsonEditorTextarea.value.trim());
+            const newArray = JSON.parse(importCache.content);
+
+            if (!Array.isArray(existingArray) || !Array.isArray(newArray)) {
+                alert('Ambos os conteúdos (existente e novo) devem ser arrays JSON.');
+                return;
+            }
+            
+            const mergedArray = [...existingArray];
+            const existingQuestions = new Set(existingArray.map(item => (item.question || "").trim() + "::" + (item.answer || "").trim()));
+            
+            let addedCount = 0;
+            newArray.forEach(item => {
+                const q = (item.question || "").trim();
+                const a = (item.answer || "").trim();
+                const key = q + "::" + a;
+                
+                // Only merge valid, unique cards
+                if (q && a && !existingQuestions.has(key)) {
+                    // Don't add FSRS data here, it will be handled on saveDeckBtn click
+                    mergedArray.push({ question: q, answer: a });
+                    existingQuestions.add(key); // Add to set to prevent future duplicates in merge
+                    addedCount++;
+                }
+            });
+            
+            jsonEditorTextarea.value = JSON.stringify(mergedArray, null, 2);
+            pendingFileName = 'Conteúdo Mesclado';
+            alert(`${addedCount} novos itens adicionados.`);
+
+        } catch (e) {
+            alert('Erro ao mesclar: JSON inválido. ' + e.message);
+        }
+        
+        mergeModal.style.display = 'none';
+        importCache = { content: null, name: null };
+    });
+
+    cancelJsonBtn.addEventListener('click', () => {
+        jsonEditorModal.style.display = 'none';
+        jsonEditorTextarea.classList.remove('invalid');
+    });
+
+    saveJsonBtn.addEventListener('click', () => {
+        const content = jsonEditorTextarea.value;
+        if (!content.trim()) {
+            pendingDeckContent = null;
+            pendingFileName = "Nenhum";
+            fileNameSpan.textContent = pendingFileName;
+            jsonEditorModal.style.display = 'none';
+            return;
+        }
+
+        try {
+            const data = JSON.parse(content);
+            if (!Array.isArray(data)) {
+                throw new Error('O JSON principal deve ser um array `[]`.');
+            }
+            
+            // --- MODIFICATION: Strip all non-Q/A data and ensure structure ---
+            const cleanedData = data.map(item => {
+                const q = (item.question || "").trim();
+                const a = (item.answer || "").trim();
+                if (q && a) {
+                    return { question: q, answer: a };
+                }
+                return null; // Invalid card
+            }).filter(item => item !== null);
+            // --- END MODIFICATION ---
+
+            // Save the Q/A only content string. FSRS data will be handled on the main deck save.
+            pendingDeckContent = JSON.stringify(cleanedData);
+
+            if (!pendingFileName || pendingFileName === "Nenhum") {
+                pendingFileName = "Conteúdo Editado";
+            }
+            fileNameSpan.textContent = pendingFileName;
+            
+            jsonEditorTextarea.classList.remove('invalid');
+            jsonEditorModal.style.display = 'none';
+            
+        } catch (e) {
+            jsonEditorTextarea.classList.add('invalid');
+            alert('JSON inválido! Verifique o formato.\n\nErro: ' + e.message);
+        }
+    });
+
+
+    // --- Voice Synthesis ---
 
     function populateVoices() {
         const voices = speechSynthesis.getVoices();
@@ -280,86 +1482,20 @@
             voiceSelect.appendChild(opt);
         });
     }
-
+    
     speechSynthesis.onvoiceschanged = populateVoices;
     populateVoices();
 
-    correctSoundToggle.addEventListener('change', () => {
-        correctSoundEnabled = correctSoundToggle.checked;
-        savePreferences();
-    });
-    wrongSoundToggle.addEventListener('change', () => {
-        wrongSoundEnabled = wrongSoundToggle.checked;
-        savePreferences();
-    });
-
-    restartOnWrongToggle.addEventListener('change', () => {
-        restartOnWrongEnabled = restartOnWrongToggle.checked;
-        savePreferences();
-    });
-
-    answerTipRange.addEventListener('input', () => {
-        answerTipLetters = parseInt(answerTipRange.value);
-        answerTipValue.textContent = answerTipLetters;
-        savePreferences();
-        if (syllableList.length > 0) {
-            displaySyllable();
-        }
-    });
-
-    function shuffle(lista) {
-        for (let i = lista.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [lista[i], lista[j]] = [lista[j], lista[i]];
-        }
-        return lista;
-    }
-
-    randomToggle.addEventListener('change', () => {
-        randomToggleEnabled = randomToggle.checked;
-        savePreferences();
-        if (syllableList.length > 0) {
-            startGame();
-        }
-    });
-
-    colorHintToggle.addEventListener('change', () => {
-        colorHintEnabled = colorHintToggle.checked;
-        savePreferences();
-        if (syllableList.length > 0) {
-            displaySyllable();
-        }
-    });
-
-    positionHintToggle.addEventListener('change', () => {
-        positionHintEnabled = positionHintToggle.checked;
-        savePreferences();
-        if (syllableList.length > 0) {
-            displaySyllable();
-        }
-    });
-
-    darkModeToggle.addEventListener('change', () => {
-        darkModeEnabled = darkModeToggle.checked;
-        document.body.classList.toggle('dark-mode', darkModeEnabled);
-        savePreferences();
-        if (syllableList.length > 0) {
-            displaySyllable();
-        }
-    });
-
-    selectVoice = () => {
+    function selectVoice() {
         if (voiceSelect.value === 'none') {
             selectedVoice = null;
             utterance = null;
-            savePreferences();
             return;
         }
 
         selectedVoice = speechSynthesis.getVoices()[voiceSelect.value];
         utterance = new SpeechSynthesisUtterance();
         utterance.voice = selectedVoice;
-        savePreferences();
 
         if (currentSyllable?.question) {
             utterance.text = currentSyllable.question;
@@ -369,114 +1505,17 @@
             speechSynthesis.speak(utterance);
         }
     };
-
-    voiceSelect.addEventListener('change', selectVoice);
-
-    settingsBtn.addEventListener('click', () => {
-        settingsModal.style.display = 'flex';
-    });
-
-    fileSelectBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
-
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target.id === "settingsModal") {
-            settingsModal.style.display = 'none';
-        }
-    });
     
-    function parseSyllableData(jsonData) {
-        try {
-            const data = JSON.parse(jsonData);
-            if (!Array.isArray(data)) {
-                alert('JSON deve ser um array');
-                return [];
-            }
-            return data.filter(item => item.question && item.answer);
-        } catch (error) {
-            alert('Erro ao parsear JSON:', error);
-            return [];
+    voiceSelect.addEventListener('change', () => {
+        selectVoice();
+        if (currentDeckId) {
+            saveCurrentDeckSettings();
         }
-    }
-
-    fileInput.addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async evt => {
-            const fileContent = evt.target.result;
-            syllableList = parseSyllableData(fileContent);
-            if (!syllableList.length) {
-                alert('Arquivo vazio ou inválido');
-                return;
-            }
-            
-            const storageData = {
-                content: fileContent,
-                name: file.name
-            };
-            localStorage.setItem('saved_file', JSON.stringify(storageData));
-
-            fileName.textContent = file.name;
-            startGame();
-        };
-        reader.readAsText(file);
     });
 
-    async function savePreferences() {
-        const preferences = {
-            correctSoundEnabled,
-            wrongSoundEnabled,
-            randomToggleEnabled,
-            colorHintEnabled,
-            positionHintEnabled,
-            darkModeEnabled,
-            answerTipLetters,
-            voiceIndex: voiceSelect.value,
-            restartOnWrongEnabled
-        };
-        localStorage.setItem('user_preferences', JSON.stringify(preferences));
-    }
-
-    async function loadPreferences() {
-        const result = localStorage.getItem('user_preferences');
-        if (result) {
-            const preferences = JSON.parse(result);
-            
-            correctSoundEnabled = preferences.correctSoundEnabled ?? true;
-            wrongSoundEnabled = preferences.wrongSoundEnabled ?? true;
-            randomToggleEnabled = preferences.randomToggleEnabled ?? false;
-            colorHintEnabled = preferences.colorHintEnabled ?? true;
-            positionHintEnabled = preferences.positionHintEnabled ?? true;
-            darkModeEnabled = preferences.darkModeEnabled ?? false;
-            answerTipLetters = preferences.answerTipLetters ?? 1;
-            restartOnWrongEnabled = preferences.restartOnWrongEnabled ?? false;
-            
-            correctSoundToggle.checked = correctSoundEnabled;
-            wrongSoundToggle.checked = wrongSoundEnabled;
-            randomToggle.checked = randomToggleEnabled;
-            colorHintToggle.checked = colorHintEnabled;
-            positionHintToggle.checked = positionHintEnabled;
-            darkModeToggle.checked = darkModeEnabled;
-            restartOnWrongToggle.checked = restartOnWrongEnabled;
-            answerTipRange.value = answerTipLetters;
-            answerTipValue.textContent = answerTipLetters;
-            
-            document.body.classList.toggle('dark-mode', darkModeEnabled);
-            
-            if (preferences.voiceIndex) {
-                voiceSelect.value = preferences.voiceIndex;
-                if (preferences.voiceIndex !== 'none') {
-                    setTimeout(() => {
-                        voiceSelect.value = preferences.voiceIndex;
-                        selectVoice();
-                    }, 500);
-                }
-            }
-        }
-    }
+    // --- Game Logic ---
+    
+    // (parseSyllableData is no longer needed, migration handles it)
 
     function hashCode(str) {
         let hash = 2166136261;
@@ -538,37 +1577,57 @@
     }
     
     function updateScoreDisplay() {
-        const totalLevels = Math.ceil(syllableList.length / groupSize);
-        scoreText.textContent = `Pontuação: ${score} | Level: ${currentGroupIndex + 1} / ${totalLevels}`;
+        const deck = allDecks.find(d => d.id === currentDeckId);
+        if (!deck) return;
+
+        if (evaluativeModeEnabled) {
+            const stats = calculateDeckStats(deck.content);
+            scoreText.textContent = `| Pontuação: ${score} | Novas: ${stats.newCount} | Revisão: ${stats.dueCount + sessionReviewQueue.length}`;
+        } else {
+            const totalLevels = Math.ceil(syllableList.length / groupSize);
+            scoreText.textContent = `| Pontuação: ${score} | Level: ${currentGroupIndex + 1} / ${totalLevels}`;
+        }
     }
 
-    function showCongrats() {
-        const modal = document.getElementById('congratsModal');
-        modal.style.display = 'flex';
-
-        const restartBtn = document.getElementById('restartBtn');
-
+    function showCongrats(isFsrs = false) {
+        const originalEvalMode = evaluativeModeEnabled; // Salva o estado original
+        
+        if (isFsrs) {
+            congratsMessage.textContent = "Não há cartões novos ou para revisar no momento! Retornando ao Modo Livre.";
+            // Apenas altera temporariamente o estado da variável global, 
+            // sem salvar a alteração no deck.
+            evaluativeModeEnabled = false; // Temporariamente força o Modo Livre
+            
+        } else {
+            congratsMessage.textContent = "Você terminou o jogo!!!";
+        }
+        
+        congratsModal.style.display = 'flex';
         const closeModal = () => {
-            modal.style.display = 'none';
+            congratsModal.style.display = 'none';
             document.removeEventListener('keydown', onKeyDown);
+            
+            // A função startGame() usará o novo valor de evaluativeModeEnabled
             startGame();
+            
+            // Restaura a variável de estado de sessão FSRS após o início do Modo Livre
+            evaluativeModeEnabled = originalEvalMode;
         };
-
+        
         restartBtn.onclick = closeModal;
-
         const onKeyDown = (e) => {
             if (e.key === 'Enter') closeModal();
         };
-
         document.addEventListener('keydown', onKeyDown);
     }
 
+    // --- Free Mode Only ---
     function loadGroup(index) {
         const start = index * groupSize;
         currentGroup = syllableList.slice(start, start + groupSize);
 
-        if (currentGroup.length === 0 && syllableList.length > 0) {
-            showCongrats();
+        if (currentGroup.length === 0 && syllableList.length > 0 && !evaluativeModeEnabled) {
+            showCongrats(false);
         }
     }
 
@@ -586,21 +1645,33 @@
         } while (currentGroup.length > 1 && randomIndex === lastPickedIndex);
 
         lastPickedIndex = randomIndex;
-
+        // Return the card object and its index in the *current group*
         return { syllable: currentGroup[randomIndex], index: randomIndex };
     }
+    // --- End Free Mode ---
+
 
     function displaySyllable() {
-        if (!currentGroup.length) return;
-
         userTyped = '';
         hintUsed = false;
+        
+        let picked = null;
+        
+        if (evaluativeModeEnabled) {
+            currentSyllable = pickFsrsCard();
+            if (!currentSyllable) {
+                showCongrats(true); // Show FSRS congrats
+                return;
+            }
+        } else {
+            // Free Mode
+            picked = pickRandomSyllable();
+            if (!picked) return; // Congrats already shown by loadGroup
+            currentSyllable = picked.syllable;
+            currentSyllable.pickIndex = picked.index; // Store index *in the group*
+        }
 
-        const picked = pickRandomSyllable();
-        if (!picked) return;
-
-        currentSyllable = picked.syllable;
-        currentSyllable.pickIndex = picked.index;
+        cardStartTime = Date.now(); // Start timer for FSRS
 
         if (selectedVoice && utterance) {
             utterance.text = currentSyllable.question;
@@ -610,127 +1681,233 @@
             speechSynthesis.speak(utterance);
         }
 
-        const color = generateColor(currentSyllable.question);
-
         if (currentSyllableElement) currentSyllableElement.remove();
-
+        
         const syllableEl = document.createElement('div');
         syllableEl.classList.add('syllable');
         syllableEl.style.position = 'relative';
 
-        syllableEl.style.color = colorHintEnabled ? color : (darkModeEnabled ? '#ffffff' : '#000000');
-
-        let placeholder = currentSyllable.answer.length - answerTipLetters > 0 ? "~" : "";
-        
-        if (answerTipLetters > 0) {
-            syllableEl.textContent = currentSyllable.question + " → " + currentSyllable.answer.substring(0, answerTipLetters) + placeholder;
-        } else {
-            syllableEl.textContent = currentSyllable.question;
-        }
-
         translationElement = document.createElement('span');
         translationElement.classList.add('translation');
-        translationElement.style.color = colorHintEnabled ? color : (darkModeEnabled ? '#ffffff' : '#000000');
         translationElement.textContent = '';
-
-        syllableEl.appendChild(translationElement);
         
-        currentSyllableElement = syllableEl;
-        document.body.appendChild(syllableEl);
-
-        if (positionHintEnabled) {
-            const { x, y } = generatePosition(syllableEl.textContent);
-            syllableEl.style.left = x + 'px';
-            syllableEl.style.top = y + 'px';
-        } else {
+        // --- Apply Mode-Specific Hints ---
+        if (evaluativeModeEnabled) {
+            // FSRS Mode: No hints
+            syllableEl.style.color = 'inherit';
+            syllableEl.textContent = currentSyllable.question;
+            translationElement.style.color = 'inherit';
+            
+            // Center position
             syllableEl.style.left = '50%';
             syllableEl.style.top = '50%';
             syllableEl.style.transform = 'translate(-50%, -50%)';
+
+        } else {
+            // Free Mode: Apply hints
+            const color = generateColor(currentSyllable.question);
+            const hintColor = colorHintEnabled ? color : 'inherit';
+            syllableEl.style.color = hintColor;
+            translationElement.style.color = hintColor;
+
+            let placeholder = currentSyllable.answer.length - answerTipLetters > 0 ? "~" : "";
+            if (answerTipLetters > 0) {
+                syllableEl.textContent = currentSyllable.question + " → " + currentSyllable.answer.substring(0, answerTipLetters) + placeholder;
+            } else {
+                syllableEl.textContent = currentSyllable.question;
+            }
+            
+            if (positionHintEnabled) {
+                const { x, y } = generatePosition(syllableEl.textContent);
+                syllableEl.style.left = x + 'px';
+                syllableEl.style.top = y + 'px';
+            } else {
+                syllableEl.style.left = '50%';
+                syllableEl.style.top = '50%';
+                syllableEl.style.transform = 'translate(-50%, -50%)';
+            }
         }
+        // --- End Apply Hints ---
+
+        syllableEl.appendChild(translationElement);
+        currentSyllableElement = syllableEl;
+        document.body.appendChild(syllableEl);
+    }
+
+    function shuffle(lista) {
+        for (let i = lista.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [lista[i], lista[j]] = [lista[j], lista[i]];
+        }
+        return lista;
     }
 
     function startGame() {
         if (syllableList.length === 0) return;
 
-        currentGroupIndex = 0;
-        currentGroup = [];
         currentSyllable = null;
         if (currentSyllableElement) currentSyllableElement.remove();
         if (translationElement) translationElement.remove();
+        
+        score = 0;
+        sessionReviewQueue = []; // Reset for both modes
 
-        if (randomToggleEnabled) {
-            syllableList = shuffle([...syllableList]);
+        if (evaluativeModeEnabled) {
+            // FSRS Mode
+            currentGroupIndex = 0;
+            currentGroup = [];
+            // syllableList is already the full deck, no shuffling needed here
+        } else {
+            // Free Mode
+            currentGroupIndex = 0;
+            currentGroup = [];
+            if (randomToggleEnabled) {
+                syllableList = shuffle([...syllableList]);
+            }
+            loadGroup(currentGroupIndex);
         }
 
-        score = 0;
-        loadGroup(currentGroupIndex);
         updateScoreDisplay();
         displaySyllable();
     }
-
-    async function loadSavedFile() {
-        const result = localStorage.getItem('saved_file');
-        if (result) {
-            const storageData = JSON.parse(result);
-            syllableList = parseSyllableData(storageData.content);
-            if (syllableList.length > 0) {
-                fileName.textContent = storageData.name || 'Arquivo salvo';               
-            }
-        }
-    }
     
-    async function init() {
-        await loadPreferences();
-        await loadSavedFile();
-
-        if (syllableList.length > 0) {
-            startGame();
-        }
-    }
-    
-    init();
-
     function createParticle(element) {
         const rect = element.getBoundingClientRect();
-
         const particle = document.createElement('div');
         particle.style.position = 'fixed';
         particle.style.left = (rect.left + rect.width / 2 - 4) + 'px';
         particle.style.top = rect.top + 'px';
         particle.style.width = '10px';
         particle.style.height = '10px';
-        particle.style.backgroundColor = element.style.color;
+        particle.style.backgroundColor = element.style.color || 'var(--primary)';
         particle.style.borderRadius = '0';
         particle.style.zIndex = '100000';
         particle.style.opacity = '1';
         particle.style.pointerEvents = 'none';
-
         document.body.appendChild(particle);
 
         let posY = rect.top;
         const speed = 15 + Math.random() * 2;
-
         function fall() {
             posY += speed;
             particle.style.top = posY + 'px';
             particle.style.opacity = 1 - posY / window.innerHeight;
-
             if (posY > window.innerHeight) {
                 particle.remove();
             } else {
                 requestAnimationFrame(fall);
             }
         }
-
         requestAnimationFrame(fall);
     }
 
+    // --- Event Listeners ---
+
+    // Settings Toggles (in-game)
+    correctSoundToggle.addEventListener('change', () => {
+        correctSoundEnabled = correctSoundToggle.checked;
+        saveCurrentDeckSettings();
+    });
+    wrongSoundToggle.addEventListener('change', () => {
+        wrongSoundEnabled = wrongSoundToggle.checked;
+        saveCurrentDeckSettings();
+    });
+    restartOnWrongToggle.addEventListener('change', () => {
+        restartOnWrongEnabled = restartOnWrongToggle.checked;
+        saveCurrentDeckSettings();
+    });
+    answerTipRange.addEventListener('input', () => {
+        answerTipLetters = parseInt(answerTipRange.value);
+        answerTipValue.textContent = answerTipLetters;
+        saveCurrentDeckSettings();
+        if (currentSyllable && !evaluativeModeEnabled) {
+            displaySyllable();
+        }
+    });
+    randomToggle.addEventListener('change', () => {
+        randomToggleEnabled = randomToggle.checked;
+        saveCurrentDeckSettings();
+        if (currentSyllable && !evaluativeModeEnabled) {
+            startGame();
+        }
+    });
+    colorHintToggle.addEventListener('change', () => {
+        colorHintEnabled = colorHintToggle.checked;
+        saveCurrentDeckSettings();
+        if (currentSyllable && !evaluativeModeEnabled) {
+            displaySyllable();
+        }
+    });
+    positionHintToggle.addEventListener('change', () => {
+        positionHintEnabled = positionHintToggle.checked;
+        saveCurrentDeckSettings();
+        if (currentSyllable && !evaluativeModeEnabled) {
+            displaySyllable();
+        }
+    });
+    darkModeToggle.addEventListener('change', () => {
+        darkModeEnabled = darkModeToggle.checked;
+        document.body.classList.toggle('dark-mode', darkModeEnabled);
+        saveCurrentDeckSettings();
+        if (currentSyllable) {
+            displaySyllable();
+        }
+    });
+    evaluativeModeToggle.addEventListener('change', () => {
+        evaluativeModeEnabled = evaluativeModeToggle.checked;
+        toggleHintOptions(evaluativeModeEnabled); // Toggle UI on change
+        saveCurrentDeckSettings();
+        if (currentSyllable) {
+            startGame();
+        }
+    });
+
+
+    // Modal/Panel Buttons
+    settingsBtn.addEventListener('click', () => {
+        if (currentDeckId) {
+            openSettingsModal(currentDeckId);
+        } else {
+            alert("Por favor, selecione um deck primeiro.");
+            deckModal.style.display = 'flex';
+        }
+    });
+    
+    deckSelectBtn.addEventListener('click', () => {
+        deckModal.style.display = 'flex';
+        // Stop game
+        if (currentSyllableElement) currentSyllableElement.remove();
+        currentSyllable = null;
+        if (speechSynthesis.speaking) speechSynthesis.cancel();
+    });
+    
+    addDeckBtn.addEventListener('click', () => {
+        openSettingsModal(null); // Open in "create" mode
+    });
+    
+    cancelSettingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+    });
+    
+    // Game Keydown Listener
     document.addEventListener('keydown', e => {
+        // Stop game input if any modal is open
+        if (settingsModal.style.display === 'flex' || 
+            deckModal.style.display === 'flex' ||
+            jsonEditorModal.style.display === 'flex' ||
+            mergeModal.style.display === 'flex' ||
+            statsModal.style.display === 'flex' ||
+            congratsModal.style.display === 'flex'
+            ) {
+            return;
+        }
+        
         if (!currentSyllable || !currentSyllable.answer) return;
 
         const key = e.key.toLowerCase();
 
         if (/^[a-z ']$/.test(key) && key.length === 1) {
+
             userTyped += key;
             if (translationElement) {
                 translationElement.textContent = userTyped;
@@ -741,8 +1918,42 @@
                 translationElement.textContent = userTyped;
             }
         } else if (e.key === 'Enter') {
-            if (userTyped === currentSyllable.answer) {
-                if (!hintUsed) {
+            
+            if (evaluativeModeEnabled) {
+                // --- FSRS Mode Logic ---
+                
+                if (hintUsed) {
+                    // This means they got it wrong (grade 0) and are pressing Enter to continue
+                    hintUsed = false;
+                    userTyped = '';
+                    if (translationElement) translationElement.textContent = '';
+                    if (currentSyllableElement) currentSyllableElement.remove();
+                    displaySyllable();
+                    return;
+                }
+
+                const endTime = Date.now();
+                const timeTaken = (endTime - cardStartTime) / 1000;
+                const levDistance = levenshtein(userTyped, currentSyllable.answer);
+                const normalizedSim = 1 - (levDistance / Math.max(userTyped.length, currentSyllable.answer.length, 1));
+                const grade = calculateGrade(normalizedSim, timeTaken);
+                
+                updateFsrsData(currentSyllable, grade);
+                saveDecks(); // Save FSRS progress
+
+                if (grade === 0) { // Again
+                    if (wrongSoundEnabled) {
+                        wrongSound.currentTime = 0;
+                        wrongSound.play();
+                    }
+                    if (translationElement) {
+                        translationElement.textContent = currentSyllable.answer;
+                    }
+                    userTyped = '';
+                    hintUsed = true; // Flag to wait for next Enter
+                    sessionReviewQueue.push(currentSyllable); // Re-add to end of session queue
+                
+                } else { // Hard, Good, Easy (All correct)
                     if (correctSoundEnabled) {
                         correctSound.currentTime = 0;
                         correctSound.play();
@@ -751,40 +1962,72 @@
                         createParticle(currentSyllableElement);
                     }
                     score++;
-                    updateScoreDisplay();
-                    currentGroup.splice(currentSyllable.pickIndex, 1);
-
-                    if (currentGroup.length === 0) {
-                        currentGroupIndex++;
-                        loadGroup(currentGroupIndex);
-                    }
-                }
-                if (translationElement) translationElement.textContent = '';
-                if (currentSyllableElement) currentSyllableElement.remove();
-                displaySyllable();
-            } else {
-                if (restartOnWrongEnabled) {
+                    if (translationElement) translationElement.textContent = '';
                     if (currentSyllableElement) currentSyllableElement.remove();
-                    if (translationElement) translationElement.remove();
-                    alert("Voce Perdeu!")
-                    startGame();
-                    return;
+                    displaySyllable(); // Pick next card
                 }
+                updateScoreDisplay(); // Update stats
 
-                if (wrongSoundEnabled) {
-                    wrongSound.currentTime = 0;
-                    wrongSound.play();
+            } else {
+                // --- Free Mode Logic ---
+                
+                if (userTyped === currentSyllable.answer) {
+                    if (!hintUsed) {
+                        if (correctSoundEnabled) {
+                            correctSound.currentTime = 0;
+                            correctSound.play();
+                        }
+                        if (currentSyllableElement) {
+                            createParticle(currentSyllableElement);
+                        }
+                        score++;
+                        updateScoreDisplay();
+                        currentGroup.splice(currentSyllable.pickIndex, 1);
+
+                        if (currentGroup.length === 0) {
+                            currentGroupIndex++;
+                            loadGroup(currentGroupIndex);
+                        }
+                    }
+                    if (translationElement) translationElement.textContent = '';
+                    if (currentSyllableElement) currentSyllableElement.remove();
+                    displaySyllable();
+                } else {
+                    if (restartOnWrongEnabled) {
+                        if (currentSyllableElement) currentSyllableElement.remove();
+                        if (translationElement) translationElement.remove();
+                        // alert("Você Perdeu!"); // Removed alert as per instructions
+                        startGame();
+                        return;
+                    }
+
+                    if (wrongSoundEnabled) {
+                        wrongSound.currentTime = 0;
+                        wrongSound.play();
+                    }
+                    if (translationElement) {
+                        translationElement.textContent = currentSyllable.answer;
+                    }
+                    userTyped = '';
+                    hintUsed = true;
                 }
-                if (translationElement) {
-                    translationElement.textContent = currentSyllable.answer;
-                }
-                userTyped = '';
-                hintUsed = true;
             }
         }
     });
+
+    // --- App Initialization ---
+    
+    function init() {
+        populateVoices();
+        loadDecks();
+        migrateOldData(); // Run migration *after* loading existing decks
+        renderDeckModal();
+        // Deck modal is shown by default via CSS
+    }
+    
+    init();
+
 })();
 </script>
-
 </body>
 </html>
