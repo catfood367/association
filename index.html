@@ -563,7 +563,7 @@
     let userTyped = '';
     let score = 0;
     let hintUsed = false;
-    let cardStartTime = 0; // For FSRS timing
+    let cardStartTime = 0 // For FSRS timing
     let firstKeyTime = 0;
 
     // --- Settings State (Game) ---
@@ -716,15 +716,16 @@
             const thinkingWhileTyping = t > r * 2 && t > 5; 
             // Ex: reação de 2s, mas digitação de 12s → suspeito
 
-            if (r < 2 && !thinkingWhileTyping) return 3; // Easy: lembrou na hora
-            if (r < 6 && !thinkingWhileTyping) return 2; // Good: lembrou com leve esforço
-            if (thinkingWhileTyping) return 1;            // Hard: pensou demais enquanto digitava
-            if (total > 10) return 1;                    // Hard: tempo total muito alto
+            if (r < 2 && !thinkingWhileTyping) return 3; 
+            if (r < 4 && !thinkingWhileTyping) return 2; 
+            if (r < 6 && !thinkingWhileTyping) return 1;
+            if (thinkingWhileTyping) return 0;         
+            if (total > 10) return 0;                   
 
-            return 2; // fallback médio
+            return 1; // fallback médio
         }
 
-        return 1;
+        return 0;
     }
     /**
      * Updates the FSRS parameters (s, d, dueDate) for a card based on its grade.
@@ -736,38 +737,26 @@
         card.s = card.s ?? 0.1; // Stability (in days)
         card.d = card.d ?? 0.5; // Difficulty (0-1)
         
-        // 1. Update Difficulty
-          // 2. Atualiza estabilidade (card.s)
         if (grade === 0) { // Again
             card.s = Math.max(0.1, card.s * 0.4);
         } else if (grade === 1) { // Hard
             card.s = Math.max(0.5, card.s * 1.1);
         } else if (grade === 2) { // Good
-            const factorGood = 1.3 + 0.5 * (1 - card.d);
+            const factorGood = 0.8 * (1 - card.d);
             card.s = Math.max(1, (card.s + 1) * factorGood);
         } else { // Easy
-            const factorEasy = 1.5 + 0.5 * (1 - card.d);
+            const factorEasy = 1.3 * (1 - card.d);
             card.s = Math.max(1, (card.s + 2) * factorEasy);
         }
 
-            // 3. Atualiza dificuldade (card.d)
-         card.d = Math.max(0, Math.min(1, card.d + [0.1, 0.05, -0.05, -0.15][grade]));
-        // 3. Update Review Dates
+        card.d = Math.max(0, Math.min(1, card.d + [0.1, 0.05, -0.05, -0.15][grade]));
 
-        
         card.lastReview = Date.now();
-            let multiplier;
-
         if (grade === 0) {
             // Review again in 2 minutes
             card.dueDate = Date.now() + 2 * 60 * 1000;
         } else {
-    // Ajusta intervalo com base no grade (tempo de resposta influencia grade)
-            if (grade === 1) multiplier = 0.8; // Hard → reforço mais cedo
-            else if (grade === 2) multiplier = 1.0; // Good → padrão
-            else multiplier = 1.2; // Easy → espaça mais
-
-            card.dueDate = Date.now() + card.s * multiplier * 24 * 60 * 60 * 1000;
+            card.dueDate = Date.now() + card.s * 24 * 60 * 60 * 1000;
         }
     }
 
@@ -781,16 +770,23 @@
         if (!deck) return null;
 
         const allCards = deck.content;
+        if (!allCards || allCards.length === 0) {
+            return null
+        }
 
+        // Exclui temporariamente os cards que já estão na sessionReviewQueue
+        const queuedIds = new Set(sessionReviewQueue.map(c => c.id));
+        const availableCards = allCards.filter(c => !queuedIds.has(c.id));
 
-        // 2. Cards due for review (Prioritize lowest retention R score)
-        const dueCards = allCards.filter(c => c.dueDate && c.dueDate <= today);
+        // Se ainda há cards fora da fila, escolhe deles primeiro
+        const cardsToConsider = availableCards.length > 0 ? availableCards : allCards;
+
+        // 1. Cards de revisão (due)
+        const dueCards = cardsToConsider.filter(c => c.dueDate && c.dueDate <= today);
         if (dueCards.length > 0) {
-            
             let bestCard = null;
             let minRetention = Infinity;
 
-            // Find the card with the lowest probability of remembering (R)
             for (const card of dueCards) {
                 const retention = calculateRetention(card);
                 if (retention < minRetention) {
@@ -798,18 +794,21 @@
                     bestCard = card;
                 }
             }
-            // Pick the one with the lowest retention (most urgent)
             return bestCard;
         }
 
-        // 3. New cards
-        const newCards = allCards.filter(c => !c.lastReview);
+        // 2. Novos cards
+        const newCards = cardsToConsider.filter(c => !c.lastReview);
         if (newCards.length > 0) {
-            // Pick a random new card
             return newCards[Math.floor(Math.random() * newCards.length)];
         }
 
-        // 4. No cards due and no new cards
+        // 3. Se não há mais cards fora da fila, retorna os da fila (por último)
+        if (sessionReviewQueue.length > 0) {
+            return sessionReviewQueue.shift();
+        }
+
+        // 4. Nada pra revisar
         return null;
     }
 
@@ -1682,8 +1681,6 @@
             currentSyllable.pickIndex = picked.index; // Store index *in the group*
         }
 
-        cardStartTime = Date.now(); // Start timer for FSRS
-
         if (selectedVoice && utterance) {
             utterance.text = currentSyllable.question;
             if (speechSynthesis.speaking) {
@@ -1767,6 +1764,7 @@
             // FSRS Mode
             currentGroupIndex = 0;
             currentGroup = [];
+            cardStartTime = Date.now();
             // syllableList is already the full deck, no shuffling needed here
         } else {
             // Free Mode
@@ -1932,7 +1930,7 @@
             
             if (evaluativeModeEnabled) {
                 // --- FSRS Mode Logic ---
-                
+
                 if (hintUsed) {
                     // This means they got it wrong (grade 0) and are pressing Enter to continue
                     hintUsed = false;
@@ -1946,15 +1944,16 @@
                 const endTime = Date.now();
                 const reactionTime = firstKeyTime ? firstKeyTime - cardStartTime : endTime - cardStartTime;
                 const typingTime = firstKeyTime ? endTime - firstKeyTime : 0;
+                firstKeyTime = 0
 
                 const levDistance = levenshtein(userTyped, currentSyllable.answer);
                 const normalizedSim = 1 - (levDistance / Math.max(userTyped.length, currentSyllable.answer.length, 1));
                 const grade = calculateGrade(normalizedSim, { reactionTime, typingTime });
-                
+
                 updateFsrsData(currentSyllable, grade);
                 saveDecks(); // Save FSRS progress
 
-                if (grade === 0) { // Again
+                if (userTyped !== currentSyllable.answer) {
                     if (wrongSoundEnabled) {
                         wrongSound.currentTime = 0;
                         wrongSound.play();
@@ -1965,6 +1964,7 @@
                     userTyped = '';
                     hintUsed = true; // Flag to wait for next Enter
                     sessionReviewQueue.push(currentSyllable); // Re-add to end of session queue
+                    cardStartTime = Date.now();
                 
                 } else { // Hard, Good, Easy (All correct)
                     if (correctSoundEnabled) {
@@ -1977,6 +1977,7 @@
                     score++;
                     if (translationElement) translationElement.textContent = '';
                     if (currentSyllableElement) currentSyllableElement.remove();
+                     cardStartTime = Date.now();
                     displaySyllable(); // Pick next card
                 }
                 updateScoreDisplay(); // Update stats
