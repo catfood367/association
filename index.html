@@ -564,6 +564,7 @@
     let score = 0;
     let hintUsed = false;
     let cardStartTime = 0; // For FSRS timing
+    let firstKeyTime = 0;
 
     // --- Settings State (Game) ---
     let selectedVoice = null;
@@ -702,18 +703,28 @@
      * @param {number} time - Time taken in seconds
      * @returns {number} Grade (0: Again, 1: Hard, 2: Good, 3: Easy)
      */
-    function calculateGrade(similarity, time) {
+    function calculateGrade(similarity, { reactionTime, typingTime }) {
         if (similarity < 0.7) return 0; // Again
         if (similarity >= 0.7 && similarity < 1.0) return 1; // Hard (erro menor)
 
-        // Similaridade perfeita → tempo influencia grade
         if (similarity === 1) {
-            if (time < 4) return 3;  // Easy: muito rápido
-            if (time < 10) return 2; // Good: rápido o suficiente
-            return 1;                 // Hard: lento, reforçar
+            const r = reactionTime / 1000; // segundos
+            const t = typingTime / 1000;   // segundos
+            const total = r + t;
+
+            // Detectar se o usuário ficou "pensando enquanto digitava"
+            const thinkingWhileTyping = t > r * 2 && t > 5; 
+            // Ex: reação de 2s, mas digitação de 12s → suspeito
+
+            if (r < 2 && !thinkingWhileTyping) return 3; // Easy: lembrou na hora
+            if (r < 6 && !thinkingWhileTyping) return 2; // Good: lembrou com leve esforço
+            if (thinkingWhileTyping) return 1;            // Hard: pensou demais enquanto digitava
+            if (total > 10) return 1;                    // Hard: tempo total muito alto
+
+            return 2; // fallback médio
         }
 
-        return 1; // fallback
+        return 1;
     }
     /**
      * Updates the FSRS parameters (s, d, dueDate) for a card based on its grade.
@@ -1907,7 +1918,7 @@
         const key = e.key.toLowerCase();
 
         if (/^[a-z ']$/.test(key) && key.length === 1) {
-
+            if (!firstKeyTime) firstKeyTime = Date.now();
             userTyped += key;
             if (translationElement) {
                 translationElement.textContent = userTyped;
@@ -1933,10 +1944,12 @@
                 }
 
                 const endTime = Date.now();
-                const timeTaken = (endTime - cardStartTime) / 1000;
+                const reactionTime = firstKeyTime ? firstKeyTime - cardStartTime : endTime - cardStartTime;
+                const typingTime = firstKeyTime ? endTime - firstKeyTime : 0;
+
                 const levDistance = levenshtein(userTyped, currentSyllable.answer);
                 const normalizedSim = 1 - (levDistance / Math.max(userTyped.length, currentSyllable.answer.length, 1));
-                const grade = calculateGrade(normalizedSim, timeTaken);
+                const grade = calculateGrade(normalizedSim, { reactionTime, typingTime });
                 
                 updateFsrsData(currentSyllable, grade);
                 saveDecks(); // Save FSRS progress
@@ -1993,23 +2006,25 @@
                     if (currentSyllableElement) currentSyllableElement.remove();
                     displaySyllable();
                 } else {
-                    if (restartOnWrongEnabled) {
-                        if (currentSyllableElement) currentSyllableElement.remove();
-                        if (translationElement) translationElement.remove();
-                        // alert("Você Perdeu!"); // Removed alert as per instructions
-                        startGame();
-                        return;
+                    if (translationElement) {
+                        translationElement.textContent = currentSyllable.answer;
                     }
 
                     if (wrongSoundEnabled) {
                         wrongSound.currentTime = 0;
                         wrongSound.play();
                     }
-                    if (translationElement) {
-                        translationElement.textContent = currentSyllable.answer;
-                    }
+                
                     userTyped = '';
                     hintUsed = true;
+
+                    if (restartOnWrongEnabled) {
+                        setTimeout(()=>{
+                            alert("Vocẽ errou, Reiniciando jogo!")
+                            startGame()
+                        }, 100)
+                    }
+
                 }
             }
         }
