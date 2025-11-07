@@ -414,6 +414,10 @@
         line-height: 1.4;
     }
 
+    high {
+        color: black;
+    }
+
 </style>
 </head>
 <body>
@@ -1742,7 +1746,8 @@
         // --- [NOVO] Lógica de Contexto ---
         if (currentSyllable.contexts && currentSyllable.contexts.length > 0) {
             const randomIndex = Math.floor(Math.random() * currentSyllable.contexts.length);
-            contextHintText.textContent = currentSyllable.contexts[randomIndex];
+            const contextHTML = currentSyllable.contexts[randomIndex].replace(/\*\*(.*?)\*\*/g, '<high>$1</high>');
+            contextHintText.innerHTML = contextHTML;
             contextHintBox.style.display = 'flex';
         } else {
             contextHintBox.style.display = 'none';
