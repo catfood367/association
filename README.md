@@ -1,161 +1,100 @@
-# Treino de Associação
+# 🚀 Spaced Repetition Association Trainer (FSRS)
 
-Um jogo interativo de aprendizado baseado em perguntas e respostas, desenvolvido para facilitar a memorização através de associações visuais e auditivas.
+This is a single-file, browser-based web application for association training (e.g., vocabulary, facts) that implements the **FSRS (Free Spaced Repetition Scheduler)** algorithm.
 
-## Características
+It's designed to be simple, portable, and powerful. Since it's a single `index.html` file, you can save it and run it entirely offline in your browser. All your decks and learning progress are saved directly in your browser's `localStorage`.
 
-### Sistema de Jogo
-- **Sistema de níveis**: Perguntas organizadas em grupos de 5 itens
-- **Pontuação**: Sistema de pontos que recompensa acertos sem uso de dicas
-- **Ordem aleatória**: Opção de embaralhar as perguntas
-- **Partículas animadas**: Efeitos visuais ao acertar respostas
+---
 
-### Dicas Visuais
-- **Dica de cor**: Cada pergunta recebe uma cor única baseada em hash
-- **Dica de posição**: Perguntas aparecem em posições consistentes na tela
-- **Dica de letras**: Mostra as primeiras letras da resposta (configurável 0-3 letras)
+## ✨ Key Features
 
-### Funcionalidades de Áudio
-- **Síntese de voz**: Leitura automática das perguntas
-- **Seleção de voz**: Escolha entre diferentes vozes disponíveis no navegador
-- **Sons de feedback**: Efeitos sonoros para acertos e erros (configuráveis)
+* **True Spaced Repetition:** Implements the modern FSRS algorithm to schedule cards based on your performance, calculating card **Stability (s)** and **Difficulty (d)**.
+* **Two Learning Modes:**
+    * **Evaluative Mode (FSRS):** A serious study mode that grades your performance (Again, Hard, Good, Easy) based on typing accuracy (Levenshtein distance) and response time. This mode updates your card's FSRS data.
+    * **Free Mode:** A low-pressure practice mode with helpful hints (letter, color, and position) that does *not* affect your FSRS progress.
+* **Full Deck Management:** Create, edit, and delete multiple decks.
+* **JSON Import/Export:** Easily import your learning data from a `.json` file. The app also supports merging new JSON files with existing deck content.
+* **Smart FSRS Data Preservation:** When you edit a deck's JSON, the app only shows you the `question` and `answer` fields. It intelligently preserves, updates, or resets the hidden FSRS data (`s`, `d`, etc.) when you save, ensuring your progress is never accidentally overwritten.
+* **Audio Prompts:** Utilizes your browser's built-in Text-to-Speech (TTS) to read the "question" aloud.
+* **No Dependencies:** Just one `index.html` file. No server, no build step, no internet connection required.
+* **Dark Mode:** Toggles for comfortable viewing.
 
-### Personalização
-- **Modo escuro**: Interface adaptável para diferentes preferências visuais
-- **Configurações persistentes**: Preferências salvas automaticamente
-- **Arquivo salvo**: O último arquivo JSON carregado é mantido entre sessões
+---
 
-## Formato do Arquivo JSON
+## 🚀 How to Use
 
-O jogo utiliza arquivos JSON com o seguinte formato:
+1.  **Download:** Save the `index.html` file to your computer.
+2.  **Open:** Open the `index.html` file in any modern web browser (like Chrome, Firefox, or Edge).
+3.  **Create a Deck:** You will see the "Selecione um Deck" (Select a Deck) screen.
+    * Click the `+` button to create a new deck.
+    * Give your deck a name (e.g., "Japanese Vocabulary").
+4.  **Add Content (JSON):**
+    * Click the **"Editar/Importar JSON"** (Edit/Import JSON) button.
+    * You can either **Import a File** or paste your content directly into the text editor.
+    * The JSON content must be an **array of objects**, with each object having a `question` and `answer` key:
+      
 
-```json
-[
-  {
-    "question": "hello",
-    "answer": "ola"
-  },
-  {
-    "question": "world",
-    "answer": "mundo"
-  },
-  {
-    "question": "cat",
-    "answer": "gato"
-  }
-]
-```
+    ```json
+    [
+        {
+            "question": "palavra1",
+            "answer": "word1"
+        },
+        {
+            "question": "palavra2",
+            "answer": "word2"
+        }
+    ]
+    ```
+5.  **Save and Play:**
+    * Click **"Salvar"** (Save) in the JSON editor.
+    * Click **"Salvar"** (Save) in the Settings modal.
+    * Your new deck will appear. Click it to start learning!
 
-### Campos Obrigatórios
-- `question`: A pergunta ou termo a ser exibido
-- `answer`: A resposta correta esperada
+---
 
-### Regras
-- O arquivo deve ser um array JSON válido
-- Cada objeto deve conter os campos `question` e `answer`
-- Respostas devem ser digitadas exatamente como especificadas (case-sensitive)
-- Suporta letras (a-z), espaços e apóstrofos
+## 🎮 The Two Learning Modes
 
-## Como Usar
+You can toggle between modes in the settings panel (`⚙️` icon).
 
-### Iniciando o Jogo
-1. Abra o arquivo HTML no navegador
-2. Clique no ícone de configurações (engrenagem azul)
-3. Clique em "Selecionar Arquivo" e escolha seu arquivo JSON
-4. O jogo iniciará automaticamente
+### 1. Modo Avaliativo (Evaluative Mode)
 
-### Jogando
-1. Uma pergunta aparecerá na tela com dicas visuais
-2. Digite a resposta usando o teclado
-3. Pressione **Enter** para confirmar
-4. Se errar, a resposta correta será exibida
-5. Acertos sem usar a dica de resposta aumentam sua pontuação
-6. Complete todos os grupos para terminar o jogo
+This is the primary **FSRS study mode**.
 
-### Controles
-- **Letras (a-z)**: Digite a resposta
-- **Espaço**: Adiciona espaço na resposta
-- **Apóstrofo (')**: Adiciona apóstrofo na resposta
-- **Backspace**: Remove o último caractere
-- **Enter**: Confirma a resposta
+* **No Hints:** You are presented with the "question" in the center of the screen.
+* **Grading:** You must type the "answer" correctly. When you press `Enter`, the app grades you based on:
+    * **Accuracy:** Uses Levenshtein distance for typos.
+    * **Time:** Measures your reaction time and typing time.
+* **Progress:** Based on your grade (Again, Hard, Good, Easy), the app updates the card's FSRS data and schedules it for a future review. This progress is saved automatically.
+* **Goal:** To move all cards from "New" to "Mature" by reviewing them at optimal intervals.
 
-## Configurações
+### 2. Modo Livre (Free Mode)
 
-### Panel de Configurações
-Acesse clicando no ícone de engrenagem no canto superior esquerdo.
+This is a **practice or "cram" mode** that does **not** affect your FSRS schedule.
 
-#### Dicas
-- **Número de letras da dica**: Controla quantas letras iniciais da resposta são mostradas (0-3)
-- **Dica de Cor**: Ativa/desativa cores únicas para cada pergunta
-- **Dica de Posição**: Ativa/desativa posicionamento consistente na tela
+* **Hints:** This mode provides several hints to aid in recall:
+    * **Letter Hint:** Shows the first `N` letters of the answer (configurable in settings).
+    * **Color Hint:** Each card has its own unique, consistent color.
+    * **Position Hint:** Each card appears in a unique, consistent position on the screen.
+* **No Grading:** The app simply checks if your answer is correct or incorrect.
+* **No Progress:** Your FSRS data (`s`, `d`, `dueDate`) is **not** changed in this mode. It's purely for practice.
 
-#### Gameplay
-- **Ordem Aleatória**: Embaralha as perguntas a cada novo jogo
+---
 
-#### Áudio
-- **Som de Acerto**: Ativa/desativa som ao acertar (requer arquivo `right.mp3`)
-- **Som de Erro**: Ativa/desativa som ao errar (requer arquivo `wrong.mp3`)
-- **Voz da leitura**: Selecione uma voz para leitura automática das perguntas
+## 🛠️ Technical Details
 
-#### Visual
-- **Modo Escuro**: Alterna entre tema claro e escuro
-
-## Arquivos Necessários
-
-### Obrigatórios
-- `index.html`: Arquivo principal do jogo (este arquivo)
-- Arquivo JSON com perguntas e respostas
-
-### Opcionais (para sons)
-- `right.mp3`: Som de resposta correta
-- `wrong.mp3`: Som de resposta errada
-
-## Armazenamento
-
-O jogo utiliza armazenamento persistente para:
-- **Preferências do usuário**: Todas as configurações são salvas automaticamente
-- **Último arquivo**: O conteúdo do último arquivo JSON carregado é preservado
-
-## Tecnologias Utilizadas
-
-- HTML5
-- CSS3 (com suporte a modo escuro)
-- JavaScript (Vanilla)
-- Web Speech API (síntese de voz)
-- FileReader API (leitura de arquivos)
-- Storage API (persistência de dados)
-
-## Compatibilidade
-
-- Navegadores modernos com suporte a:
-  - ES6+ JavaScript
-  - Web Speech API
-  - FileReader API
-  - Storage API
-- Testado em Chrome, Firefox, Edge e Safari
-
-## Solução de Problemas
-
-### O arquivo não está sendo carregado
-- Verifique se o arquivo é um JSON válido
-- Certifique-se de que cada objeto tem `question` e `answer`
-- Abra o console do navegador (F12) para ver mensagens de erro
-
-### A voz não está funcionando
-- Verifique se o navegador suporta Web Speech API
-- Algumas vozes podem não estar disponíveis em todos os sistemas
-- Tente selecionar uma voz diferente nas configurações
-
-### Sons não estão tocando
-- Certifique-se de que os arquivos `right.mp3` e `wrong.mp3` estão no mesmo diretório
-- Alguns navegadores bloqueiam áudio até interação do usuário
-- Verifique se os sons estão habilitados nas configurações
-
-### Preferências não estão sendo salvas
-- Verifique o console do navegador (F12) para erros de storage
-- Certifique-se de que o navegador permite armazenamento local
-- Alguns modos de navegação privada podem bloquear storage
-
-## Licença
-
-Este projeto é de código aberto e pode ser usado livremente para fins educacionais.
+* **Persistence:** All deck and card data is stored in the browser's `localStorage` under the key `association_game_decks_fsrs`.
+* **Card Data Structure:**
+    * When you import a JSON, you only provide `{ "question": "...", "answer": "..." }`.
+    * Internally, the app expands this to the full FSRS card format:
+        ```json
+        {
+            "question": "...",
+            "answer": "...",
+            "s": 0.1,  // Stability
+            "d": 0.5,  // Difficulty
+            "lastReview": null,
+            "dueDate": null
+        }
+        ```
+* **FSRS Logic:** The app uses `calculateRetention`, `calculateGrade`, and `updateFsrsData` functions to manage the card scheduling, closely following the FSRS algorithm principles.
