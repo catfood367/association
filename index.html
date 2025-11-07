@@ -15,6 +15,7 @@
         --secondary: rgb(0, 182, 173);
         --danger: rgb(220, 53, 69);
         --warning: rgb(255, 193, 7);
+        --info: rgb(13, 110, 253);
     }
     
     body {
@@ -383,6 +384,36 @@
     .panel-btn:hover svg {
         fill: var(--secondary);
     }
+
+    /* --- [NOVO] Context Hint Box --- */
+    #contextHintBox {
+        display: none; /* Oculto por padrão */
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(13, 110, 253, 0.85); /* Cor --info com alfa */
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 8px;
+        z-index: 9998;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        font-weight: bold;
+        align-items: center;
+        max-width: 40%;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    #contextHintBox svg {
+        width: 20px;
+        height: 20px;
+        fill: #fff;
+        margin-right: 10px;
+        flex-shrink: 0; /* Impede que o ícone encolha */
+    }
+    #contextHintText {
+        line-height: 1.4;
+    }
+
 </style>
 </head>
 <body>
@@ -497,11 +528,13 @@
         <textarea id="jsonEditorTextarea" placeholder='[
     {
         "question": "palavra1",
-        "answer": "word1"
+        "answer": "word1",
+        "contexts": ["Example phrase 1"]
     },
     {
         "question": "palavra2",
-        "answer": "word2"
+        "answer": "word2",
+        "contexts": ["Example phrase 1", "Example phrase 2"]
     }
 ]'></textarea>
         <div class="modal-actions">
@@ -534,11 +567,17 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-6h-8v10zm0-18v6h8V3h-8z"/></svg>
     </button>
     <button id="settingsBtn" class="panel-btn" title="Configurações do Deck Atual">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.08.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69.98l2.49 1c.23.08.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
     </button>
     <span id="currentDeckName">Nenhum Deck</span>
     <span id="scoreText">| Pontuação: 0 | Level: 0 / 0</span>
 </div>
+
+<div id="contextHintBox">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+    <span id="contextHintText">Esta é uma frase de contexto de exemplo.</span>
+</div>
+
 
 <input type="file" id="fileInput" accept=".json" style="display:none;">
 
@@ -557,7 +596,7 @@
     let currentGroupIndex = 0; // For free mode
     let currentGroup = []; // For free mode
     let sessionReviewQueue = []; // For FSRS mode 'Again' cards
-    let currentSyllable = null; // The current card object { question, answer, s, d, ... }
+    let currentSyllable = null; // The current card object { question, answer, contexts, s, d, ... }
     let currentSyllableElement = null;
     let translationElement = null;
     let userTyped = '';
@@ -595,6 +634,10 @@
     const fileNameSpan = document.getElementById('fileName');
     const currentDeckNameSpan = document.getElementById('currentDeckName');
     
+    // [NOVO] Contexto
+    const contextHintBox = document.getElementById('contextHintBox');
+    const contextHintText = document.getElementById('contextHintText');
+
     // Modals
     const deckModal = document.getElementById('deckModal');
     const settingsModal = document.getElementById('settingsModal');
@@ -862,6 +905,7 @@
             deck.content = deck.content.map(card => ({
                 question: card.question,
                 answer: card.answer,
+                contexts: card.contexts || [], // [NOVO] Preserva/adiciona contexts
                 s: 0.1,
                 d: 0.5,
                 lastReview: null,
@@ -1022,6 +1066,7 @@
                 currentDeckId = null;
                 currentDeckNameSpan.textContent = "Nenhum Deck";
                 if (currentSyllableElement) currentSyllableElement.remove();
+                contextHintBox.style.display = 'none'; // [NOVO] Esconde contexto
             }
         }
     }
@@ -1178,11 +1223,11 @@
         
         const settings = readSettingsFromUI();
         
-        // 1. Parse the new content (only Q&A)
-        let newContentQAOnly = [];
+        // 1. Parse the new content (Q, A, e Contexts)
+        let newContentBase = [];
         try {
-            newContentQAOnly = pendingDeckContent ? JSON.parse(pendingDeckContent) : [];
-            if (!Array.isArray(newContentQAOnly)) throw new Error('Conteúdo JSON inválido.');
+            newContentBase = pendingDeckContent ? JSON.parse(pendingDeckContent) : [];
+            if (!Array.isArray(newContentBase)) throw new Error('Conteúdo JSON inválido.');
         } catch (e) {
             alert("Erro ao salvar: Conteúdo JSON parece ser inválido.");
             return;
@@ -1191,7 +1236,7 @@
         // --- Deduplication and Filtering (using Q+A key) ---
         const qaKeys = new Set();
         let hasDuplicates = false;
-        const filteredContent = newContentQAOnly.filter(card => {
+        const filteredContent = newContentBase.filter(card => {
             const q = (card.question || "").trim();
             const a = (card.answer || "").trim();
             if (q && a) {
@@ -1209,7 +1254,7 @@
         if (hasDuplicates) {
             alert("Atenção: Cartões duplicados (Mesma Pergunta e Resposta) foram removidos. Por favor, corrija o JSON para evitar a perda de dados FSRS.");
         }
-        newContentQAOnly = filteredContent; // Use the deduplicated, cleaned array
+        newContentBase = filteredContent; // Use the deduplicated, cleaned array
         // ----------------------------------------------------
         
         if (editModeDeckId) {
@@ -1231,7 +1276,7 @@
             });
             
             // 4. Build the final merged content with FSRS data
-            const finalContent = newContentQAOnly.map(newCard => {
+            const finalContent = newContentBase.map(newCard => {
                 const q = (newCard.question || "").trim();
                 const a = (newCard.answer || "").trim();
                 const key = q + "::" + a;
@@ -1241,12 +1286,15 @@
                 
                 if (matchedOldCard) {
                     // Found a match: retain the full card object with its existing FSRS data
+                    // [NOVO] Atualiza os contextos, caso tenham mudado no JSON
+                    matchedOldCard.contexts = newCard.contexts || [];
                     return matchedOldCard; 
                 } else {
                     // No match (new card or Q/A was modified): Reset FSRS data
                     return {
                         question: q,
                         answer: a,
+                        contexts: newCard.contexts || [], // [NOVO] Adiciona contexts
                         s: 0.1,
                         d: 0.5,
                         lastReview: null,
@@ -1262,15 +1310,16 @@
             
         } else {
             // Create New Deck - FSRS Initialization Logic
-            if (newContentQAOnly.length === 0) {
+            if (newContentBase.length === 0) {
                 alert('Por favor, adicione conteúdo JSON ao deck usando o botão "Editar/Importar JSON".');
                 return;
             }
             
             // Initialize new content with FSRS format
-            const newContentWithFSRS = newContentQAOnly.map(card => ({
+            const newContentWithFSRS = newContentBase.map(card => ({
                 question: (card.question || "").trim(),
                 answer: (card.answer || "").trim(),
+                contexts: card.contexts || [], // [NOVO] Adiciona contexts
                 s: 0.1,
                 d: 0.5,
                 lastReview: null,
@@ -1325,13 +1374,14 @@
             // 1. Parse the JSON string into a JavaScript array of card objects.
             const contentArray = JSON.parse(pendingDeckContent);
             
-            // 2. Map over the array to create a new array containing only 'question' and 'answer'.
+            // 2. Map over the array to create a new array containing only 'question', 'answer', e 'contexts'.
             const cleanedContent = contentArray.map(card => {
                 // Ensure card is an object and has the required keys before cleaning
                 if (typeof card === 'object' && card.question && card.answer) {
                     return {
                         question: (card.question || "").trim(),
-                        answer: (card.answer || "").trim()
+                        answer: (card.answer || "").trim(),
+                        contexts: card.contexts || [] // [NOVO] Preserva/adiciona contexts
                     };
                 }
                 // Only return valid card formats
@@ -1411,8 +1461,12 @@
                 
                 // Only merge valid, unique cards
                 if (q && a && !existingQuestions.has(key)) {
-                    // Don't add FSRS data here, it will be handled on saveDeckBtn click
-                    mergedArray.push({ question: q, answer: a });
+                    // [NOVO] Preserva/adiciona contexts
+                    mergedArray.push({ 
+                        question: q, 
+                        answer: a, 
+                        contexts: item.contexts || [] 
+                    });
                     existingQuestions.add(key); // Add to set to prevent future duplicates in merge
                     addedCount++;
                 }
@@ -1451,18 +1505,22 @@
                 throw new Error('O JSON principal deve ser um array `[]`.');
             }
             
-            // --- MODIFICATION: Strip all non-Q/A data and ensure structure ---
+            // --- MODIFICATION: Strip all non-Q/A/Contexts data and ensure structure ---
             const cleanedData = data.map(item => {
                 const q = (item.question || "").trim();
                 const a = (item.answer || "").trim();
                 if (q && a) {
-                    return { question: q, answer: a };
+                    return { 
+                        question: q, 
+                        answer: a,
+                        contexts: item.contexts || [] // [NOVO] Preserva/adiciona contexts
+                    };
                 }
                 return null; // Invalid card
             }).filter(item => item !== null);
             // --- END MODIFICATION ---
 
-            // Save the Q/A only content string. FSRS data will be handled on the main deck save.
+            // Save the Q/A/Contexts only content string. FSRS data will be handled on the main deck save.
             pendingDeckContent = JSON.stringify(cleanedData);
 
             if (!pendingFileName || pendingFileName === "Nenhum") {
@@ -1681,6 +1739,17 @@
             currentSyllable.pickIndex = picked.index; // Store index *in the group*
         }
 
+        // --- [NOVO] Lógica de Contexto ---
+        if (currentSyllable.contexts && currentSyllable.contexts.length > 0) {
+            const randomIndex = Math.floor(Math.random() * currentSyllable.contexts.length);
+            contextHintText.textContent = currentSyllable.contexts[randomIndex];
+            contextHintBox.style.display = 'flex';
+        } else {
+            contextHintBox.style.display = 'none';
+        }
+        // --- Fim da Lógica de Contexto ---
+
+
         if (selectedVoice && utterance) {
             utterance.text = currentSyllable.question;
             if (speechSynthesis.speaking) {
@@ -1756,6 +1825,7 @@
         currentSyllable = null;
         if (currentSyllableElement) currentSyllableElement.remove();
         if (translationElement) translationElement.remove();
+        contextHintBox.style.display = 'none'; // [NOVO] Esconde contexto
         
         score = 0;
         sessionReviewQueue = []; // Reset for both modes
@@ -1887,6 +1957,7 @@
         // Stop game
         if (currentSyllableElement) currentSyllableElement.remove();
         currentSyllable = null;
+        contextHintBox.style.display = 'none'; // [NOVO] Esconde contexto
         if (speechSynthesis.speaking) speechSynthesis.cancel();
     });
     
