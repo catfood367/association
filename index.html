@@ -2002,6 +2002,14 @@
             if (translationElement) {
                 translationElement.textContent = userTyped;
             }
+        } else if (e.key === 'Control') {
+            if (selectedVoice && utterance) {
+                utterance.text = currentSyllable.question;
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                }
+                speechSynthesis.speak(utterance);
+            }
         } else if (e.key === 'Enter') {
             
             if (evaluativeModeEnabled) {
