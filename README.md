@@ -16,7 +16,7 @@ Ele foi projetado para ser **simples, portátil e poderoso**. Por ser um único 
 * **Gerenciamento Completo de Baralhos:** Crie, edite e exclua múltiplos baralhos.
 * **Importação/Exportação JSON:** Importe facilmente seus dados de aprendizado de um arquivo `.json`. O aplicativo também suporta a mesclagem de novos arquivos JSON com o conteúdo existente do baralho.
 * **Preservação Inteligente de Dados FSRS:** Ao editar o JSON de um baralho, o aplicativo exibe apenas os campos `question`, `answer` e `contexts`. Ele preserva, atualiza ou redefine de forma inteligente os dados FSRS ocultos (`s`, `d`, etc.) quando você salva, garantindo que seu progresso nunca seja sobrescrito acidentalmente.
-* **Comandos de Áudio:** Utiliza o Text-to-Speech (TTS) integrado do seu navegador para ler a "pergunta" em voz alta.
+* **Comandos de Áudio:** Utiliza o Text-to-Speech (TTS) integrado do seu navegador para ler a "pergunta" em voz alta. Pressione `Ctrl` a qualquer momento para repetir a pronúncia.
 * **Sem Dependências:** Apenas um arquivo `index.html`. Sem servidor, sem etapa de _build_, sem necessidade de conexão com a internet.
 * **Modo Escuro:** Alterna para uma visualização confortável.
 
