@@ -35,7 +35,6 @@
         color: var(--text-dark);
     }
 
-    /* --- Modals --- */
     .modal {
         display: none;
         position: fixed;
@@ -141,16 +140,14 @@
         margin-top: 10px;
         flex-wrap: wrap;
     }
-
     .modal-actions-sub {
         display: flex;
         justify-content: space-between;
         flex-wrap: wrap;
     }
 
-    /* --- Deck Modal --- */
     #deckModal {
-        display: flex; /* Show by default on load */
+        display: flex;
     }
     #deckModal .modal-content {
         width: 80vw;
@@ -165,7 +162,7 @@
         gap: 20px;
         padding: 20px;
         overflow-y: auto;
-        height: calc(100% - 80px); /* 100% - h1 margin/padding */
+        height: calc(100% - 80px);
     }
     .deck-card {
         width: 180px;
@@ -241,7 +238,6 @@
         color: #777;
     }
 
-    /* --- JSON Editor Modal --- */
     #jsonEditorModal .modal-content {
         width: 80vw;
         max-width: 800px;
@@ -258,10 +254,7 @@
         padding: 15px;
         box-sizing: border-box;
         resize:none;
-        /* scrollbar-color: [thumb-color] [track-color]; */
         scrollbar-color: #45da00 #000000;
-        
-        /* "thin" or "auto" */
         scrollbar-width: thin;
     }
     #jsonEditorTextarea.invalid {
@@ -269,7 +262,6 @@
         box-shadow: 0 0 10px var(--danger);
     }
 
-    /* --- Merge Modal --- */
     #mergeModal .modal-content {
         width: 450px;
     }
@@ -281,7 +273,6 @@
         font-size: 1.1rem;
     }
 
-    /* --- Stats Modal --- */
     #statsModal .modal-content {
         width: 450px;
         text-align: left;
@@ -313,8 +304,6 @@
         margin: 20px auto 0;
     }
 
-
-    /* --- Game Elements --- */
     .syllable {
         position: absolute;
         font-size: 40px;
@@ -344,7 +333,6 @@
         color: var(--text-dark);
     }
 
-    /* --- Score Panel --- */
     #scorePanel {
         position: fixed;
         top: 10px;
@@ -385,13 +373,12 @@
         fill: var(--secondary);
     }
 
-    /* --- [NOVO] Context Hint Box --- */
     #contextHintBox {
-        display: none; /* Oculto por padrão */
+        display: none;
         position: fixed;
         top: 10px;
         right: 10px;
-        background: rgba(13, 110, 253, 0.85); /* Cor --info com alfa */
+        background: rgba(13, 110, 253, 0.85);
         color: #fff;
         padding: 10px 15px;
         border-radius: 8px;
@@ -408,7 +395,7 @@
         height: 20px;
         fill: #fff;
         margin-right: 10px;
-        flex-shrink: 0; /* Impede que o ícone encolha */
+        flex-shrink: 0;
     }
     #contextHintText {
         line-height: 1.4;
@@ -454,7 +441,6 @@
         <button id="statsCloseBtn" class="btn btn-primary">Fechar</button>
     </div>
 </div>
-
 
 <div id="settingsModal" class="modal">
     <div class="modal-content">
@@ -565,7 +551,6 @@
     </div>
 </div>
 
-
 <div id="scorePanel">
     <button id="deckSelectBtn" class="panel-btn" title="Voltar para seleção de decks">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-6h-8v10zm0-18v6h8V3h-8z"/></svg>
@@ -582,258 +567,185 @@
     <span id="contextHintText">Esta é uma frase de contexto de exemplo.</span>
 </div>
 
-
 <input type="file" id="fileInput" accept=".json" style="display:none;">
 
 <script>
 (() => {
-    // --- Constants ---
     const groupSize = 5;
-    const DECK_STORAGE_KEY = 'association_game_decks_fsrs'; // Changed key to avoid conflicts
+    const DECK_STORAGE_KEY = 'association_game_decks_fsrs';
     const OLD_FILE_KEY = 'saved_file';
     const OLD_PREFS_KEY = 'user_preferences';
 
-    // --- Game State ---
     let allDecks = [];
     let currentDeckId = null;
-    let syllableList = []; // Full list of cards from deck.content
-    let currentGroupIndex = 0; // For free mode
-    let currentGroup = []; // For free mode
-    let sessionReviewQueue = []; // For FSRS mode 'Again' cards
-    let currentSyllable = null; // The current card object { question, answer, contexts, s, d, ... }
+    let syllableList = [];
+    let currentGroupIndex = 0;
+    let currentGroup = [];
+    let sessionReviewQueue = [];
+    let currentSyllable = null;
     let currentSyllableElement = null;
     let translationElement = null;
     let userTyped = '';
     let score = 0;
     let hintUsed = false;
-    let cardStartTime = 0 // For FSRS timing
+    let cardStartTime = 0;
     let firstKeyTime = 0;
 
-    // --- Settings State (Game) ---
     let selectedVoice = null;
     let correctSoundEnabled = true;
     let wrongSoundEnabled = true;
-    let randomToggleEnabled = false; // Free mode
-    let colorHintEnabled = true; // Free mode
-    let positionHintEnabled = true; // Free mode
+    let randomToggleEnabled = false;
+    let colorHintEnabled = true;
+    let positionHintEnabled = true;
     let darkModeEnabled = false;
-    let answerTipLetters = 1; // Free mode
-    let restartOnWrongEnabled = false; // Free mode
-    let evaluativeModeEnabled = false; // FSRS mode toggle
+    let answerTipLetters = 1;
+    let restartOnWrongEnabled = false;
+    let evaluativeModeEnabled = false;
     let utterance = null;
 
-    // --- Settings Modal State ---
     let editModeDeckId = null;
     let pendingDeckContent = null;
     let pendingFileName = null;
     let importCache = { content: null, name: null };
 
-    // --- Audio ---
     const correctSound = new Audio('right.mp3');
     const wrongSound = new Audio('wrong.mp3');
 
-    // --- DOM Elements ---
-    const scoreText = document.getElementById('scoreText');
-    const fileInput = document.getElementById('fileInput');
-    const fileNameSpan = document.getElementById('fileName');
-    const currentDeckNameSpan = document.getElementById('currentDeckName');
-    
-    // [NOVO] Contexto
-    const contextHintBox = document.getElementById('contextHintBox');
-    const contextHintText = document.getElementById('contextHintText');
+    const dom = {
+        scoreText: document.getElementById('scoreText'),
+        fileInput: document.getElementById('fileInput'),
+        fileNameSpan: document.getElementById('fileName'),
+        currentDeckNameSpan: document.getElementById('currentDeckName'),
+        contextHintBox: document.getElementById('contextHintBox'),
+        contextHintText: document.getElementById('contextHintText'),
+        deckModal: document.getElementById('deckModal'),
+        settingsModal: document.getElementById('settingsModal'),
+        congratsModal: document.getElementById('congratsModal'),
+        congratsMessage: document.getElementById('congratsMessage'),
+        jsonEditorModal: document.getElementById('jsonEditorModal'),
+        mergeModal: document.getElementById('mergeModal'),
+        statsModal: document.getElementById('statsModal'),
+        settingsBtn: document.getElementById('settingsBtn'),
+        deckSelectBtn: document.getElementById('deckSelectBtn'),
+        deckList: document.getElementById('deckList'),
+        addDeckBtn: document.getElementById('addDeckBtn'),
+        editJsonBtn: document.getElementById('editJsonBtn'),
+        saveDeckBtn: document.getElementById('saveDeckBtn'),
+        cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
+        deckNameInput: document.getElementById('deckNameInput'),
+        correctSoundToggle: document.getElementById('correctSoundToggle'),
+        wrongSoundToggle: document.getElementById('wrongSoundToggle'),
+        randomToggle: document.getElementById("randomToggle"),
+        colorHintToggle: document.getElementById("colorHintToggle"),
+        positionHintToggle: document.getElementById("positionHintToggle"),
+        darkModeToggle: document.getElementById("darkModeToggle"),
+        restartOnWrongToggle: document.getElementById("restartOnWrongToggle"),
+        evaluativeModeToggle: document.getElementById("evaluativeModeToggle"),
+        voiceSelect: document.getElementById('voiceSelect'),
+        answerTipRange: document.getElementById('answerTipRange'),
+        answerTipValue: document.getElementById('answerTipValue'),
+        freeModeSettings: document.getElementById('freeModeSettings'),
+        restartBtn: document.getElementById('restartBtn'),
+        jsonEditorTextarea: document.getElementById('jsonEditorTextarea'),
+        importJsonBtn: document.getElementById('importJsonBtn'),
+        cancelJsonBtn: document.getElementById('cancelJsonBtn'),
+        saveJsonBtn: document.getElementById('saveJsonBtn'),
+        cancelMergeBtn: document.getElementById('cancelMergeBtn'),
+        overwriteBtn: document.getElementById('overwriteBtn'),
+        mergeBtn: document.getElementById('mergeBtn'),
+        statsCloseBtn: document.getElementById('statsCloseBtn'),
+        statsDeckName: document.getElementById('statsDeckName'),
+        statsTotal: document.getElementById('statsTotal'),
+        statsNew: document.getElementById('statsNew'),
+        statsLearning: document.getElementById('statsLearning'),
+        statsDue: document.getElementById('statsDue'),
+        statsMature: document.getElementById('statsMature')
+    };
 
-    // Modals
-    const deckModal = document.getElementById('deckModal');
-    const settingsModal = document.getElementById('settingsModal');
-    const congratsModal = document.getElementById('congratsModal');
-    const congratsMessage = document.getElementById('congratsMessage');
-    const jsonEditorModal = document.getElementById('jsonEditorModal');
-    const mergeModal = document.getElementById('mergeModal');
-    const statsModal = document.getElementById('statsModal');
-
-    // Score Panel Buttons
-    const settingsBtn = document.getElementById('settingsBtn');
-    const deckSelectBtn = document.getElementById('deckSelectBtn');
-    
-    // Deck Modal Buttons
-    const deckList = document.getElementById('deckList');
-    const addDeckBtn = document.getElementById('addDeckBtn');
-
-    // Settings Modal Elements
-    const editJsonBtn = document.getElementById('editJsonBtn');
-    const saveDeckBtn = document.getElementById('saveDeckBtn');
-    const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
-    const deckNameInput = document.getElementById('deckNameInput');
-    
-    const correctSoundToggle = document.getElementById('correctSoundToggle');
-    const wrongSoundToggle = document.getElementById('wrongSoundToggle');
-    const randomToggle = document.getElementById("randomToggle");
-    const colorHintToggle = document.getElementById("colorHintToggle");
-    const positionHintToggle = document.getElementById("positionHintToggle");
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    const restartOnWrongToggle = document.getElementById("restartOnWrongToggle");
-    const evaluativeModeToggle = document.getElementById("evaluativeModeToggle");
-    const voiceSelect = document.getElementById('voiceSelect');
-    const answerTipRange = document.getElementById('answerTipRange');
-    const answerTipValue = document.getElementById('answerTipValue');
-    const freeModeSettings = document.getElementById('freeModeSettings'); // NEW DOM ELEMENT
-    
-    // Congrats Modal
-    const restartBtn = document.getElementById('restartBtn');
-
-    // JSON Editor Modal Elements
-    const jsonEditorTextarea = document.getElementById('jsonEditorTextarea');
-    const importJsonBtn = document.getElementById('importJsonBtn');
-    const cancelJsonBtn = document.getElementById('cancelJsonBtn');
-    const saveJsonBtn = document.getElementById('saveJsonBtn');
-    
-    // Merge Modal Elements
-    const cancelMergeBtn = document.getElementById('cancelMergeBtn');
-    const overwriteBtn = document.getElementById('overwriteBtn');
-    const mergeBtn = document.getElementById('mergeBtn');
-
-    // Stats Modal Elements
-    const statsCloseBtn = document.getElementById('statsCloseBtn');
-    const statsDeckName = document.getElementById('statsDeckName');
-    const statsTotal = document.getElementById('statsTotal');
-    const statsNew = document.getElementById('statsNew');
-    const statsLearning = document.getElementById('statsLearning');
-    const statsDue = document.getElementById('statsDue');
-    const statsMature = document.getElementById('statsMature');
-
-
-    // --- FSRS & Helper Functions ---
-
-    /**
-     * Calculates the Levenshtein distance between two strings.
-     */
     function levenshtein(a, b) {
         const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
-        for (let i = 0; i <= a.length; i++) { matrix[0][i] = i; }
-        for (let j = 0; j <= b.length; j++) { matrix[j][0] = j; }
+        for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+        for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
         for (let j = 1; j <= b.length; j++) {
             for (let i = 1; i <= a.length; i++) {
                 const cost = a[i - 1] === b[j - 1] ? 0 : 1;
                 matrix[j][i] = Math.min(
-                    matrix[j][i - 1] + 1,      // deletion
-                    matrix[j - 1][i] + 1,      // insertion
-                    matrix[j - 1][i - 1] + cost // substitution
+                    matrix[j][i - 1] + 1,
+                    matrix[j - 1][i] + 1,
+                    matrix[j - 1][i - 1] + cost
                 );
             }
         }
         return matrix[b.length][a.length];
     }
     
-    /**
-     * Calculates the probability of remembering (Retention R) for a card.
-     * Prioritizes the card selection for FSRS mode.
-     * @param {object} card - The card object
-     * @returns {number} Retention (0.0 to 1.0)
-     */
     function calculateRetention(card) {
-        if (!card.lastReview || card.s === undefined || card.s <= 0.1) {
-            return 1.0; 
-        }
-        
+        if (!card.lastReview || card.s === undefined || card.s <= 0.1) return 1.0;
         const now = Date.now();
-        // Interval in days: (Current Time - Last Review Time) / (milliseconds per day)
-        const intervalDays = (now - card.lastReview) / (24 * 60 * 60 * 1000); 
-        
-        // FSRS Retention Formula: R = e^(-Interval / Stability)
-        // Card.s is Stability in days
-        return Math.exp(-intervalDays / card.s); 
+        const intervalDays = (now - card.lastReview) / (24 * 60 * 60 * 1000);
+        return Math.exp(-intervalDays / card.s);
     }
 
-    /**
-     * Calculates a performance grade (0-3) based on similarity and time.
-     * @param {number} similarity - Normalized similarity (0.0 to 1.0)
-     * @param {number} time - Time taken in seconds
-     * @returns {number} Grade (0: Again, 1: Hard, 2: Good, 3: Easy)
-     */
     function calculateGrade(similarity, { reactionTime, typingTime }) {
-        if (similarity < 0.7) return 0; // Again
-        if (similarity >= 0.7 && similarity < 1.0) return 1; // Hard (erro menor)
+        if (similarity < 0.7) return 0;
+        if (similarity >= 0.7 && similarity < 1.0) return 1;
 
         if (similarity === 1) {
-            const r = reactionTime / 1000; // segundos
-            const t = typingTime / 1000;   // segundos
+            const r = reactionTime / 1000;
+            const t = typingTime / 1000;
             const total = r + t;
+            const thinkingWhileTyping = t > r * 2 && t > 5;
 
-            // Detectar se o usuário ficou "pensando enquanto digitava"
-            const thinkingWhileTyping = t > r * 2 && t > 5; 
-            // Ex: reação de 2s, mas digitação de 12s → suspeito
-
-            if (r < 2 && !thinkingWhileTyping) return 3; 
-            if (r < 4 && !thinkingWhileTyping) return 2; 
+            if (r < 2 && !thinkingWhileTyping) return 3;
+            if (r < 4 && !thinkingWhileTyping) return 2;
             if (r < 6 && !thinkingWhileTyping) return 1;
-            if (thinkingWhileTyping) return 0;         
-            if (total > 10) return 0;                   
+            if (thinkingWhileTyping) return 0;
+            if (total > 10) return 0;
 
-            return 1; // fallback médio
+            return 1;
         }
-
         return 0;
     }
-    /**
-     * Updates the FSRS parameters (s, d, dueDate) for a card based on its grade.
-     * @param {object} card - The card object
-     * @param {number} grade - The grade (0-3)
-     */
+
     function updateFsrsData(card, grade) {
-        // Ensure card has FSRS properties
-        card.s = card.s ?? 0.1; // Stability (in days)
-        card.d = card.d ?? 0.5; // Difficulty (0-1)
+        card.s = card.s ?? 0.1;
+        card.d = card.d ?? 0.5;
         
-        if (grade === 0) { // Again
+        if (grade === 0) {
             card.s = Math.max(0.1, card.s * 0.4);
-        } else if (grade === 1) { // Hard
+        } else if (grade === 1) {
             card.s = Math.max(0.5, card.s * 1.1);
-        } else if (grade === 2) { // Good
+        } else if (grade === 2) {
             const factorGood = 0.8 * (1 - card.d);
             card.s = Math.max(1, (card.s + 1) * factorGood);
-        } else { // Easy
+        } else {
             const factorEasy = 1.3 * (1 - card.d);
             card.s = Math.max(1, (card.s + 2) * factorEasy);
         }
 
         card.d = Math.max(0, Math.min(1, card.d + [0.1, 0.05, -0.05, -0.15][grade]));
-
         card.lastReview = Date.now();
+        
         if (grade === 0) {
-            // Review again in 2 minutes
             card.dueDate = Date.now() + 2 * 60 * 1000;
         } else {
             card.dueDate = Date.now() + card.s * 24 * 60 * 60 * 1000;
         }
     }
 
-    /**
-     * Picks the next card to review based on FSRS logic.
-     * @returns {object | null} The card to review, or null if none.
-     */
     function pickFsrsCard() {
         const today = Date.now();
         const deck = allDecks.find(d => d.id === currentDeckId);
-        if (!deck) return null;
+        if (!deck || !deck.content || deck.content.length === 0) return null;
 
-        const allCards = deck.content;
-        if (!allCards || allCards.length === 0) {
-            return null
-        }
-
-        // Exclui temporariamente os cards que já estão na sessionReviewQueue
         const queuedIds = new Set(sessionReviewQueue.map(c => c.id));
-        const availableCards = allCards.filter(c => !queuedIds.has(c.id));
+        const availableCards = deck.content.filter(c => !queuedIds.has(c.id));
+        const cardsToConsider = availableCards.length > 0 ? availableCards : deck.content;
 
-        // Se ainda há cards fora da fila, escolhe deles primeiro
-        const cardsToConsider = availableCards.length > 0 ? availableCards : allCards;
-
-        // 1. Cards de revisão (due)
         const dueCards = cardsToConsider.filter(c => c.dueDate && c.dueDate <= today);
         if (dueCards.length > 0) {
             let bestCard = null;
             let minRetention = Infinity;
-
             for (const card of dueCards) {
                 const retention = calculateRetention(card);
                 if (retention < minRetention) {
@@ -844,26 +756,18 @@
             return bestCard;
         }
 
-        // 2. Novos cards
         const newCards = cardsToConsider.filter(c => !c.lastReview);
         if (newCards.length > 0) {
             return newCards[Math.floor(Math.random() * newCards.length)];
         }
 
-        // 3. Se não há mais cards fora da fila, retorna os da fila (por último)
         if (sessionReviewQueue.length > 0) {
             return sessionReviewQueue.shift();
         }
 
-        // 4. Nada pra revisar
         return null;
     }
 
-    /**
-     * Calculates statistics for a deck.
-     * @param {Array} content - The deck's content array
-     * @returns {object} Stats object
-     */
     function calculateDeckStats(content) {
         const today = Date.now() + 2 * 60 * 1000;
         const stats = {
@@ -878,38 +782,23 @@
             if (!card.lastReview) {
                 stats.newCount++;
             } else {
-                if (card.dueDate && card.dueDate <= today) {
-                    stats.dueCount++;
-                }
-                if (card.s < 7) { // Stability < 7 days
-                    stats.learningCount++;
-                } else if (card.s >= 21) { // Stability >= 21 days
-                    stats.matureCount++;
-                }
+                if (card.dueDate && card.dueDate <= today) stats.dueCount++;
+                if (card.s < 7) stats.learningCount++;
+                else if (card.s >= 21) stats.matureCount++;
             }
         }
         return stats;
     }
 
-    /**
-     * Ensures all cards in a deck have FSRS properties.
-     * @param {object} deck - The deck object
-     */
     function migrateDeckContentIfNeeded(deck) {
         if (!deck || !deck.content || deck.content.length === 0) return;
 
-        let needsMigration = false;
-        // Check first card. If it's missing 's', assume all are.
         if (deck.content[0].s === undefined) {
-            needsMigration = true;
-        }
-
-        if (needsMigration) {
             console.log(`Migrando deck: ${deck.name}`);
             deck.content = deck.content.map(card => ({
                 question: card.question,
                 answer: card.answer,
-                contexts: card.contexts || [], // [NOVO] Preserva/adiciona contexts
+                contexts: card.contexts || [],
                 s: 0.1,
                 d: 0.5,
                 lastReview: null,
@@ -918,9 +807,6 @@
             saveDecks();
         }
     }
-
-
-    // --- Deck Management ---
 
     function migrateOldData() {
         const oldFile = localStorage.getItem(OLD_FILE_KEY);
@@ -935,7 +821,7 @@
                     id: 'migrated_' + Date.now(),
                     name: fileData.name || "Deck Migrado",
                     fileName: fileData.name || "Arquivo Migrado",
-                    content: fileData.content, // Will be migrated on load
+                    content: fileData.content,
                     settings: {
                         correctSoundEnabled: prefsData.correctSoundEnabled ?? true,
                         wrongSoundEnabled: prefsData.wrongSoundEnabled ?? true,
@@ -945,7 +831,7 @@
                         darkModeEnabled: prefsData.darkModeEnabled ?? false,
                         answerTipLetters: prefsData.answerTipLetters ?? 1,
                         restartOnWrongEnabled: prefsData.restartOnWrongEnabled ?? false,
-                        evaluativeModeEnabled: false, // Default to false
+                        evaluativeModeEnabled: false,
                         voiceIndex: prefsData.voiceIndex ?? 'none'
                     }
                 };
@@ -971,7 +857,7 @@
     }
 
     function renderDeckModal() {
-        deckList.innerHTML = ''; // Clear existing cards
+        dom.deckList.innerHTML = '';
 
         allDecks.forEach(deck => {
             const card = document.createElement('div');
@@ -992,12 +878,11 @@
                     </button>
                 </div>
             `;
-            deckList.appendChild(card);
+            dom.deckList.appendChild(card);
         });
         
-        deckList.appendChild(addDeckBtn); // Re-append the "Add" button
+        dom.deckList.appendChild(dom.addDeckBtn);
 
-        // Add event listeners for new cards
         document.querySelectorAll('.deck-card-main').forEach(btn => btn.addEventListener('click', handleSelectDeck));
         document.querySelectorAll('.deck-action-btn.stats').forEach(btn => btn.addEventListener('click', handleShowStats));
         document.querySelectorAll('.deck-action-btn.edit').forEach(btn => btn.addEventListener('click', handleEditDeck));
@@ -1010,7 +895,6 @@
 
         if (!selectedDeck) return;
         
-        // Migrate content if this is an old deck
         migrateDeckContentIfNeeded(selectedDeck);
         
         if (!selectedDeck.content || selectedDeck.content.length === 0) {
@@ -1019,11 +903,11 @@
         }
         
         currentDeckId = deckId;
-        syllableList = selectedDeck.content; // This is now the full list of card objects
+        syllableList = selectedDeck.content;
 
         applyDeckSettingsToGame(selectedDeck.settings);
-        currentDeckNameSpan.textContent = selectedDeck.name;
-        deckModal.style.display = 'none';
+        dom.currentDeckNameSpan.textContent = selectedDeck.name;
+        dom.deckModal.style.display = 'none';
         startGame();
     }
 
@@ -1042,88 +926,70 @@
         migrateDeckContentIfNeeded(deck);
         const stats = calculateDeckStats(deck.content);
         
-        statsDeckName.textContent = `Estatísticas: ${deck.name}`;
-        statsTotal.textContent = stats.total;
-        statsNew.textContent = stats.newCount;
-        statsLearning.textContent = stats.learningCount;
-        statsDue.textContent = stats.dueCount;
-        statsMature.textContent = stats.matureCount;
+        dom.statsDeckName.textContent = `Estatísticas: ${deck.name}`;
+        dom.statsTotal.textContent = stats.total;
+        dom.statsNew.textContent = stats.newCount;
+        dom.statsLearning.textContent = stats.learningCount;
+        dom.statsDue.textContent = stats.dueCount;
+        dom.statsMature.textContent = stats.matureCount;
         
-        statsModal.style.display = 'flex';
+        dom.statsModal.style.display = 'flex';
     }
-    
-    statsCloseBtn.addEventListener('click', () => {
-        statsModal.style.display = 'none';
-    });
-
 
     function handleDeleteDeck(e) {
         e.stopPropagation();
         const deckId = e.currentTarget.dataset.deckId;
-        // Use custom modal for confirm soon
         if (confirm(`Tem certeza que quer deletar o deck "${allDecks.find(d => d.id === deckId).name}"?`)) {
             allDecks = allDecks.filter(d => d.id !== deckId);
             saveDecks();
             renderDeckModal();
             if (deckId === currentDeckId) {
-                // If we deleted the active deck, reset game
                 currentDeckId = null;
-                currentDeckNameSpan.textContent = "Nenhum Deck";
+                dom.currentDeckNameSpan.textContent = "Nenhum Deck";
                 if (currentSyllableElement) currentSyllableElement.remove();
-                contextHintBox.style.display = 'none'; // [NOVO] Esconde contexto
+                dom.contextHintBox.style.display = 'none';
             }
         }
     }
 
-    // --- Settings Modal ---
-
-    /**
-     * Toggles the visibility/usability of the Free Mode hint settings.
-     * @param {boolean} evaluativeMode - true if FSRS mode is enabled
-     */
     function toggleHintOptions(evaluativeMode) {
-        if (freeModeSettings) {
-            freeModeSettings.style.pointerEvents = evaluativeMode ? 'none' : 'auto';
-            freeModeSettings.style.opacity = evaluativeMode ? '0.5' : '1';
+        if (dom.freeModeSettings) {
+            dom.freeModeSettings.style.pointerEvents = evaluativeMode ? 'none' : 'auto';
+            dom.freeModeSettings.style.opacity = evaluativeMode ? '0.5' : '1';
         }
     }
 
     function openSettingsModal(deckId = null) {
-        if (deckId) { // Edit Mode
+        if (deckId) {
             editModeDeckId = deckId;
             const deck = allDecks.find(d => d.id === deckId);
             if (!deck) return;
 
-            migrateDeckContentIfNeeded(deck); // Ensure FSRS data exists
+            migrateDeckContentIfNeeded(deck);
             
-            deckNameInput.value = deck.name;
-            pendingDeckContent = deck.content ? JSON.stringify(deck.content) : null; // Load existing content
+            dom.deckNameInput.value = deck.name;
+            pendingDeckContent = deck.content ? JSON.stringify(deck.content) : null;
             pendingFileName = deck.fileName;
-            fileNameSpan.textContent = deck.fileName || 'Conteúdo Salvo';
+            dom.fileNameSpan.textContent = deck.fileName || 'Conteúdo Salvo';
             applySettingsToModalUI(deck.settings);
-            
-            // Apply initial toggle state
             toggleHintOptions(deck.settings.evaluativeModeEnabled);
-            
-        } else { // Create Mode
+        } else {
             editModeDeckId = null;
-            deckNameInput.value = '';
-            pendingDeckContent = null; // Reset
+            dom.deckNameInput.value = '';
+            pendingDeckContent = null;
             pendingFileName = null;
-            fileNameSpan.textContent = 'Nenhum';
+            dom.fileNameSpan.textContent = 'Nenhum';
             
-            const defaults = readSettingsFromUI(); // Get current UI state/defaults
+            const defaults = readSettingsFromUI();
             applySettingsToModalUI(defaults);
-            
-            // Apply initial toggle state
             toggleHintOptions(defaults.evaluativeModeEnabled);
         }
         
-        settingsModal.style.display = 'flex';
+        dom.settingsModal.style.display = 'flex';
     }
 
-    function applySettingsToModalUI(settings) {
-        const defaults = {
+    function getDefaultSettings() {
+        return {
             correctSoundEnabled: true,
             wrongSoundEnabled: true,
             randomToggleEnabled: false,
@@ -1135,40 +1001,42 @@
             evaluativeModeEnabled: false,
             voiceIndex: 'none'
         };
+    }
 
-        const s = settings || defaults;
+    function applySettingsToModalUI(settings) {
+        const s = settings || getDefaultSettings();
         
-        correctSoundToggle.checked = s.correctSoundEnabled;
-        wrongSoundToggle.checked = s.wrongSoundEnabled;
-        randomToggle.checked = s.randomToggleEnabled;
-        colorHintToggle.checked = s.colorHintEnabled;
-        positionHintToggle.checked = s.positionHintEnabled;
-        darkModeToggle.checked = s.darkModeEnabled;
-        restartOnWrongToggle.checked = s.restartOnWrongEnabled;
-        evaluativeModeToggle.checked = s.evaluativeModeEnabled;
-        answerTipRange.value = s.answerTipLetters;
-        answerTipValue.textContent = s.answerTipLetters;
+        dom.correctSoundToggle.checked = s.correctSoundEnabled;
+        dom.wrongSoundToggle.checked = s.wrongSoundEnabled;
+        dom.randomToggle.checked = s.randomToggleEnabled;
+        dom.colorHintToggle.checked = s.colorHintEnabled;
+        dom.positionHintToggle.checked = s.positionHintEnabled;
+        dom.darkModeToggle.checked = s.darkModeEnabled;
+        dom.restartOnWrongToggle.checked = s.restartOnWrongEnabled;
+        dom.evaluativeModeToggle.checked = s.evaluativeModeEnabled;
+        dom.answerTipRange.value = s.answerTipLetters;
+        dom.answerTipValue.textContent = s.answerTipLetters;
         
         setTimeout(() => {
-            voiceSelect.value = s.voiceIndex;
-            if (!voiceSelect.value && voiceSelect.options.length > 0) {
-                voiceSelect.value = 'none';
+            dom.voiceSelect.value = s.voiceIndex;
+            if (!dom.voiceSelect.value && dom.voiceSelect.options.length > 0) {
+                dom.voiceSelect.value = 'none';
             }
         }, 200);
     }
 
     function readSettingsFromUI() {
         return {
-            correctSoundEnabled: correctSoundToggle.checked,
-            wrongSoundEnabled: wrongSoundToggle.checked,
-            randomToggleEnabled: randomToggle.checked,
-            colorHintEnabled: colorHintToggle.checked,
-            positionHintEnabled: positionHintToggle.checked,
-            darkModeEnabled: darkModeToggle.checked,
-            answerTipLetters: parseInt(answerTipRange.value),
-            restartOnWrongEnabled: restartOnWrongToggle.checked,
-            evaluativeModeEnabled: evaluativeModeToggle.checked,
-            voiceIndex: voiceSelect.value
+            correctSoundEnabled: dom.correctSoundToggle.checked,
+            wrongSoundEnabled: dom.wrongSoundToggle.checked,
+            randomToggleEnabled: dom.randomToggle.checked,
+            colorHintEnabled: dom.colorHintToggle.checked,
+            positionHintEnabled: dom.positionHintToggle.checked,
+            darkModeEnabled: dom.darkModeToggle.checked,
+            answerTipLetters: parseInt(dom.answerTipRange.value),
+            restartOnWrongEnabled: dom.restartOnWrongToggle.checked,
+            evaluativeModeEnabled: dom.evaluativeModeToggle.checked,
+            voiceIndex: dom.voiceSelect.value
         };
     }
     
@@ -1187,11 +1055,11 @@
         
         if (settings.voiceIndex && settings.voiceIndex !== 'none') {
             setTimeout(() => {
-                voiceSelect.value = settings.voiceIndex;
+                dom.voiceSelect.value = settings.voiceIndex;
                 selectVoice();
             }, 500);
         } else {
-            voiceSelect.value = 'none';
+            dom.voiceSelect.value = 'none';
             selectVoice();
         }
     }
@@ -1201,25 +1069,63 @@
         const deck = allDecks.find(d => d.id === currentDeckId);
         if (!deck) return;
 
-        // Read all settings from UI (since modal isn't open, read from game state)
         deck.settings = {
-            correctSoundEnabled: correctSoundEnabled,
-            wrongSoundEnabled: wrongSoundEnabled,
-            randomToggleEnabled: randomToggleEnabled,
-            colorHintEnabled: colorHintEnabled,
-            positionHintEnabled: positionHintEnabled,
-            darkModeEnabled: darkModeEnabled,
-            answerTipLetters: answerTipLetters,
-            restartOnWrongEnabled: restartOnWrongEnabled,
-            evaluativeModeEnabled: evaluativeModeEnabled,
-            voiceIndex: voiceSelect.value
+            correctSoundEnabled,
+            wrongSoundEnabled,
+            randomToggleEnabled,
+            colorHintEnabled,
+            positionHintEnabled,
+            darkModeEnabled,
+            answerTipLetters,
+            restartOnWrongEnabled,
+            evaluativeModeEnabled,
+            voiceIndex: dom.voiceSelect.value
         };
         
         saveDecks();
     }
 
-    saveDeckBtn.addEventListener('click', () => {
-        const deckName = deckNameInput.value.trim();
+    function cleanJsonContent(contentArray) {
+        return contentArray.map(card => {
+            const q = (card.question || "").trim();
+            const a = (card.answer || "").trim();
+            if (q && a) {
+                return { 
+                    question: q, 
+                    answer: a,
+                    contexts: card.contexts || []
+                };
+            }
+            return null;
+        }).filter(item => item !== null);
+    }
+
+    function deduplicateCards(cards) {
+        const qaKeys = new Set();
+        let hasDuplicates = false;
+        const filtered = cards.filter(card => {
+            const q = (card.question || "").trim();
+            const a = (card.answer || "").trim();
+            if (q && a) {
+                const key = q + "::" + a;
+                if (qaKeys.has(key)) {
+                    hasDuplicates = true;
+                    return false;
+                }
+                qaKeys.add(key);
+                return true;
+            }
+            return false;
+        });
+        
+        if (hasDuplicates) {
+            alert("Atenção: Cartões duplicados (Mesma Pergunta e Resposta) foram removidos. Por favor, corrija o JSON para evitar a perda de dados FSRS.");
+        }
+        return filtered;
+    }
+
+    dom.saveDeckBtn.addEventListener('click', () => {
+        const deckName = dom.deckNameInput.value.trim();
         if (!deckName) {
             alert('Por favor, dê um nome ao deck.');
             return;
@@ -1227,7 +1133,6 @@
         
         const settings = readSettingsFromUI();
         
-        // 1. Parse the new content (Q, A, e Contexts)
         let newContentBase = [];
         try {
             newContentBase = pendingDeckContent ? JSON.parse(pendingDeckContent) : [];
@@ -1237,68 +1142,37 @@
             return;
         }
 
-        // --- Deduplication and Filtering (using Q+A key) ---
-        const qaKeys = new Set();
-        let hasDuplicates = false;
-        const filteredContent = newContentBase.filter(card => {
-            const q = (card.question || "").trim();
-            const a = (card.answer || "").trim();
-            if (q && a) {
-                 const key = q + "::" + a;
-                 if (qaKeys.has(key)) {
-                    hasDuplicates = true;
-                    return false; // Filter out duplicates
-                 }
-                 qaKeys.add(key);
-                 return true;
-            }
-            return false; // Filter out cards with empty Q or A
-        });
-        
-        if (hasDuplicates) {
-            alert("Atenção: Cartões duplicados (Mesma Pergunta e Resposta) foram removidos. Por favor, corrija o JSON para evitar a perda de dados FSRS.");
-        }
-        newContentBase = filteredContent; // Use the deduplicated, cleaned array
-        // ----------------------------------------------------
+        newContentBase = deduplicateCards(newContentBase);
         
         if (editModeDeckId) {
-            // Update Existing Deck - FSRS Preservation/Reset Logic
             const deck = allDecks.find(d => d.id === editModeDeckId);
             if (!deck) return;
 
-            // 2. Get the current card list with FSRS data
             const oldContentWithFSRS = deck.content || [];
-            
-            // 3. Create a map for quick lookup of existing FSRS data by unique key (Q+A)
             const oldCardMap = new Map();
+            
             oldContentWithFSRS.forEach(card => {
                 const q = (card.question || "").trim();
                 const a = (card.answer || "").trim();
                 const key = q + "::" + a;
-                // Only store valid cards
                 if (q && a) oldCardMap.set(key, card);
             });
             
-            // 4. Build the final merged content with FSRS data
             const finalContent = newContentBase.map(newCard => {
                 const q = (newCard.question || "").trim();
                 const a = (newCard.answer || "").trim();
                 const key = q + "::" + a;
 
-                // Attempt to find a match (preserves FSRS data)
                 const matchedOldCard = oldCardMap.get(key);
                 
                 if (matchedOldCard) {
-                    // Found a match: retain the full card object with its existing FSRS data
-                    // [NOVO] Atualiza os contextos, caso tenham mudado no JSON
                     matchedOldCard.contexts = newCard.contexts || [];
-                    return matchedOldCard; 
+                    return matchedOldCard;
                 } else {
-                    // No match (new card or Q/A was modified): Reset FSRS data
                     return {
                         question: q,
                         answer: a,
-                        contexts: newCard.contexts || [], // [NOVO] Adiciona contexts
+                        contexts: newCard.contexts || [],
                         s: 0.1,
                         d: 0.5,
                         lastReview: null,
@@ -1310,20 +1184,17 @@
             deck.name = deckName;
             deck.settings = settings;
             deck.fileName = pendingFileName;
-            deck.content = finalContent; // Save the newly generated array
-            
+            deck.content = finalContent;
         } else {
-            // Create New Deck - FSRS Initialization Logic
             if (newContentBase.length === 0) {
                 alert('Por favor, adicione conteúdo JSON ao deck usando o botão "Editar/Importar JSON".');
                 return;
             }
             
-            // Initialize new content with FSRS format
             const newContentWithFSRS = newContentBase.map(card => ({
                 question: (card.question || "").trim(),
                 answer: (card.answer || "").trim(),
-                contexts: card.contexts || [], // [NOVO] Adiciona contexts
+                contexts: card.contexts || [],
                 s: 0.1,
                 d: 0.5,
                 lastReview: null,
@@ -1342,111 +1213,87 @@
         
         saveDecks();
         renderDeckModal();
-        settingsModal.style.display = 'none';
+        dom.settingsModal.style.display = 'none';
 
-        // If we just edited the *currently running* deck, reload it
         if (editModeDeckId && editModeDeckId === currentDeckId) {
             const updatedDeck = allDecks.find(d => d.id === currentDeckId);
             syllableList = updatedDeck.content;
             applyDeckSettingsToGame(updatedDeck.settings);
-            currentDeckNameSpan.textContent = updatedDeck.name;
+            dom.currentDeckNameSpan.textContent = updatedDeck.name;
             startGame();
         }
     });
-
-    // --- JSON Editor & Import Logic ---
 
     function prettyPrintJson(jsonString) {
         try {
             const obj = JSON.parse(jsonString);
             return JSON.stringify(obj, null, 2);
         } catch (e) {
-            return jsonString; // Return original if parsing fails
+            return jsonString;
         }
     }
 
-    editJsonBtn.addEventListener('click', () => {
-        // Stop if there's no pending content to edit
+    dom.editJsonBtn.addEventListener('click', () => {
         if (!pendingDeckContent) {
-            jsonEditorTextarea.value = ''; // Ensure it's empty if no content
-            jsonEditorTextarea.classList.remove('invalid');
-            jsonEditorModal.style.display = 'flex';
+            dom.jsonEditorTextarea.value = '';
+            dom.jsonEditorTextarea.classList.remove('invalid');
+            dom.jsonEditorModal.style.display = 'flex';
             return;
         }
 
         try {
-            // 1. Parse the JSON string into a JavaScript array of card objects.
             const contentArray = JSON.parse(pendingDeckContent);
-            
-            // 2. Map over the array to create a new array containing only 'question', 'answer', e 'contexts'.
-            const cleanedContent = contentArray.map(card => {
-                // Ensure card is an object and has the required keys before cleaning
-                if (typeof card === 'object' && card.question && card.answer) {
-                    return {
-                        question: (card.question || "").trim(),
-                        answer: (card.answer || "").trim(),
-                        contexts: card.contexts || [] // [NOVO] Preserva/adiciona contexts
-                    };
-                }
-                // Only return valid card formats
-                return null; 
-            }).filter(card => card !== null); // Filter out invalid entries
-
-            // 3. Set the textarea value using the cleaned content stringified and prettified.
-            jsonEditorTextarea.value = prettyPrintJson(JSON.stringify(cleanedContent));
-            
+            const cleanedContent = cleanJsonContent(contentArray);
+            dom.jsonEditorTextarea.value = prettyPrintJson(JSON.stringify(cleanedContent));
         } catch (e) {
-            // If parsing the pendingDeckContent fails (it should not, but just in case)
             console.error("Error cleaning and prepping JSON for editor:", e);
-            jsonEditorTextarea.value = pendingDeckContent; // Load raw content if cleaning fails
+            dom.jsonEditorTextarea.value = pendingDeckContent;
         }
         
-        jsonEditorTextarea.classList.remove('invalid');
-        jsonEditorModal.style.display = 'flex';
+        dom.jsonEditorTextarea.classList.remove('invalid');
+        dom.jsonEditorModal.style.display = 'flex';
     });
 
-    importJsonBtn.addEventListener('click', () => {
-        fileInput.click();
+    dom.importJsonBtn.addEventListener('click', () => {
+        dom.fileInput.click();
     });
 
-    fileInput.addEventListener('change', e => {
+    dom.fileInput.addEventListener('change', e => {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = async evt => {
+        reader.onload = evt => {
             importCache.content = evt.target.result;
             importCache.name = file.name;
             
-            const existingContent = jsonEditorTextarea.value.trim();
+            const existingContent = dom.jsonEditorTextarea.value.trim();
             if (existingContent) {
-                // Already content, ask to merge/overwrite
-                mergeModal.style.display = 'flex';
+                dom.mergeModal.style.display = 'flex';
             } else {
-                // Editor is empty, just load the file
-                jsonEditorTextarea.value = prettyPrintJson(importCache.content);
+                dom.jsonEditorTextarea.value = prettyPrintJson(importCache.content);
                 pendingFileName = importCache.name;
             }
         };
         reader.readAsText(file);
-        fileInput.value = null; // Reset input
+        dom.fileInput.value = null;
     });
 
-    cancelMergeBtn.addEventListener('click', () => {
-        mergeModal.style.display = 'none';
+    dom.cancelMergeBtn.addEventListener('click', () => {
+        dom.mergeModal.style.display = 'none';
         importCache = { content: null, name: null };
     });
 
-    overwriteBtn.addEventListener('click', () => {
-        jsonEditorTextarea.value = prettyPrintJson(importCache.content);
+    dom.overwriteBtn.addEventListener('click', () => {
+        dom.jsonEditorTextarea.value = prettyPrintJson(importCache.content);
         pendingFileName = importCache.name;
-        mergeModal.style.display = 'none';
+        dom.mergeModal.style.display = 'none';
         importCache = { content: null, name: null };
     });
 
-    mergeBtn.addEventListener('click', () => {
+    dom.mergeBtn.addEventListener('click', () => {
         try {
-            const existingArray = JSON.parse(jsonEditorTextarea.value.trim());
+            const existingArray = JSON.parse(dom.jsonEditorTextarea.value.trim());
             const newArray = JSON.parse(importCache.content);
 
             if (!Array.isArray(existingArray) || !Array.isArray(newArray)) {
@@ -1463,43 +1310,40 @@
                 const a = (item.answer || "").trim();
                 const key = q + "::" + a;
                 
-                // Only merge valid, unique cards
                 if (q && a && !existingQuestions.has(key)) {
-                    // [NOVO] Preserva/adiciona contexts
                     mergedArray.push({ 
                         question: q, 
                         answer: a, 
                         contexts: item.contexts || [] 
                     });
-                    existingQuestions.add(key); // Add to set to prevent future duplicates in merge
+                    existingQuestions.add(key);
                     addedCount++;
                 }
             });
             
-            jsonEditorTextarea.value = JSON.stringify(mergedArray, null, 2);
+            dom.jsonEditorTextarea.value = JSON.stringify(mergedArray, null, 2);
             pendingFileName = 'Conteúdo Mesclado';
             alert(`${addedCount} novos itens adicionados.`);
-
         } catch (e) {
             alert('Erro ao mesclar: JSON inválido. ' + e.message);
         }
         
-        mergeModal.style.display = 'none';
+        dom.mergeModal.style.display = 'none';
         importCache = { content: null, name: null };
     });
 
-    cancelJsonBtn.addEventListener('click', () => {
-        jsonEditorModal.style.display = 'none';
-        jsonEditorTextarea.classList.remove('invalid');
+    dom.cancelJsonBtn.addEventListener('click', () => {
+        dom.jsonEditorModal.style.display = 'none';
+        dom.jsonEditorTextarea.classList.remove('invalid');
     });
 
-    saveJsonBtn.addEventListener('click', () => {
-        const content = jsonEditorTextarea.value;
+    dom.saveJsonBtn.addEventListener('click', () => {
+        const content = dom.jsonEditorTextarea.value;
         if (!content.trim()) {
             pendingDeckContent = null;
             pendingFileName = "Nenhum";
-            fileNameSpan.textContent = pendingFileName;
-            jsonEditorModal.style.display = 'none';
+            dom.fileNameSpan.textContent = pendingFileName;
+            dom.jsonEditorModal.style.display = 'none';
             return;
         }
 
@@ -1509,49 +1353,30 @@
                 throw new Error('O JSON principal deve ser um array `[]`.');
             }
             
-            // --- MODIFICATION: Strip all non-Q/A/Contexts data and ensure structure ---
-            const cleanedData = data.map(item => {
-                const q = (item.question || "").trim();
-                const a = (item.answer || "").trim();
-                if (q && a) {
-                    return { 
-                        question: q, 
-                        answer: a,
-                        contexts: item.contexts || [] // [NOVO] Preserva/adiciona contexts
-                    };
-                }
-                return null; // Invalid card
-            }).filter(item => item !== null);
-            // --- END MODIFICATION ---
-
-            // Save the Q/A/Contexts only content string. FSRS data will be handled on the main deck save.
+            const cleanedData = cleanJsonContent(data);
             pendingDeckContent = JSON.stringify(cleanedData);
 
             if (!pendingFileName || pendingFileName === "Nenhum") {
                 pendingFileName = "Conteúdo Editado";
             }
-            fileNameSpan.textContent = pendingFileName;
+            dom.fileNameSpan.textContent = pendingFileName;
             
-            jsonEditorTextarea.classList.remove('invalid');
-            jsonEditorModal.style.display = 'none';
-            
+            dom.jsonEditorTextarea.classList.remove('invalid');
+            dom.jsonEditorModal.style.display = 'none';
         } catch (e) {
-            jsonEditorTextarea.classList.add('invalid');
+            dom.jsonEditorTextarea.classList.add('invalid');
             alert('JSON inválido! Verifique o formato.\n\nErro: ' + e.message);
         }
     });
 
-
-    // --- Voice Synthesis ---
-
     function populateVoices() {
         const voices = speechSynthesis.getVoices();
-        voiceSelect.innerHTML = '<option value="none">Nenhuma</option>';
+        dom.voiceSelect.innerHTML = '<option value="none">Nenhuma</option>';
         voices.forEach((voice, index) => {
             const opt = document.createElement('option');
             opt.value = index;
             opt.textContent = `${voice.name} (${voice.lang})`;
-            voiceSelect.appendChild(opt);
+            dom.voiceSelect.appendChild(opt);
         });
     }
     
@@ -1559,13 +1384,13 @@
     populateVoices();
 
     function selectVoice() {
-        if (voiceSelect.value === 'none') {
+        if (dom.voiceSelect.value === 'none') {
             selectedVoice = null;
             utterance = null;
             return;
         }
 
-        selectedVoice = speechSynthesis.getVoices()[voiceSelect.value];
+        selectedVoice = speechSynthesis.getVoices()[dom.voiceSelect.value];
         utterance = new SpeechSynthesisUtterance();
         utterance.voice = selectedVoice;
 
@@ -1576,18 +1401,14 @@
             }
             speechSynthesis.speak(utterance);
         }
-    };
+    }
     
-    voiceSelect.addEventListener('change', () => {
+    dom.voiceSelect.addEventListener('change', () => {
         selectVoice();
         if (currentDeckId) {
             saveCurrentDeckSettings();
         }
     });
-
-    // --- Game Logic ---
-    
-    // (parseSyllableData is no longer needed, migration handles it)
 
     function hashCode(str) {
         let hash = 2166136261;
@@ -1602,12 +1423,7 @@
         const hash = hashCode(str);
         const hue = (hash * 137) % 360;
         const saturation = 85 + (hash % 15);
-        let lightness;
-        if (darkModeEnabled) {
-            lightness = 60 + (hash % 16);
-        } else {
-            lightness = 35 + (hash % 16);
-        }
+        const lightness = darkModeEnabled ? 60 + (hash % 16) : 35 + (hash % 16);
         return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
 
@@ -1623,12 +1439,10 @@
         tempEl.textContent = str;
         tempEl.style.visibility = 'hidden';
         tempEl.style.position = 'absolute';
-        
         document.body.appendChild(tempEl);
         
         const elWidth = tempEl.offsetWidth;
         const elHeight = tempEl.offsetHeight;
-        
         document.body.removeChild(tempEl);
 
         const maxX = window.innerWidth - marginRight - elWidth;
@@ -1654,46 +1468,39 @@
 
         if (evaluativeModeEnabled) {
             const stats = calculateDeckStats(deck.content);
-            scoreText.textContent = `| Pontuação: ${score} | Novas: ${stats.newCount} | Revisão: ${stats.dueCount + sessionReviewQueue.length}`;
+            dom.scoreText.textContent = `| Pontuação: ${score} | Novas: ${stats.newCount} | Revisão: ${stats.dueCount + sessionReviewQueue.length}`;
         } else {
             const totalLevels = Math.ceil(syllableList.length / groupSize);
-            scoreText.textContent = `| Pontuação: ${score} | Level: ${currentGroupIndex + 1} / ${totalLevels}`;
+            dom.scoreText.textContent = `| Pontuação: ${score} | Level: ${currentGroupIndex + 1} / ${totalLevels}`;
         }
     }
 
     function showCongrats(isFsrs = false) {
-        const originalEvalMode = evaluativeModeEnabled; // Salva o estado original
+        const originalEvalMode = evaluativeModeEnabled;
         
         if (isFsrs) {
-            congratsMessage.textContent = "Não há cartões novos ou para revisar no momento! Retornando ao Modo Livre.";
-            // Apenas altera temporariamente o estado da variável global, 
-            // sem salvar a alteração no deck.
-            evaluativeModeEnabled = false; // Temporariamente força o Modo Livre
-            
+            dom.congratsMessage.textContent = "Não há cartões novos ou para revisar no momento! Retornando ao Modo Livre.";
+            evaluativeModeEnabled = false;
         } else {
-            congratsMessage.textContent = "Você terminou o jogo!!!";
+            dom.congratsMessage.textContent = "Você terminou o jogo!!!";
         }
         
-        congratsModal.style.display = 'flex';
+        dom.congratsModal.style.display = 'flex';
+        
         const closeModal = () => {
-            congratsModal.style.display = 'none';
+            dom.congratsModal.style.display = 'none';
             document.removeEventListener('keydown', onKeyDown);
-            
-            // A função startGame() usará o novo valor de evaluativeModeEnabled
             startGame();
-            
-            // Restaura a variável de estado de sessão FSRS após o início do Modo Livre
             evaluativeModeEnabled = originalEvalMode;
         };
         
-        restartBtn.onclick = closeModal;
+        dom.restartBtn.onclick = closeModal;
         const onKeyDown = (e) => {
             if (e.key === 'Enter') closeModal();
         };
         document.addEventListener('keydown', onKeyDown);
     }
 
-    // --- Free Mode Only ---
     function loadGroup(index) {
         const start = index * groupSize;
         currentGroup = syllableList.slice(start, start + groupSize);
@@ -1717,11 +1524,8 @@
         } while (currentGroup.length > 1 && randomIndex === lastPickedIndex);
 
         lastPickedIndex = randomIndex;
-        // Return the card object and its index in the *current group*
         return { syllable: currentGroup[randomIndex], index: randomIndex };
     }
-    // --- End Free Mode ---
-
 
     function displaySyllable() {
         userTyped = '';
@@ -1732,28 +1536,24 @@
         if (evaluativeModeEnabled) {
             currentSyllable = pickFsrsCard();
             if (!currentSyllable) {
-                showCongrats(true); // Show FSRS congrats
+                showCongrats(true);
                 return;
             }
         } else {
-            // Free Mode
             picked = pickRandomSyllable();
-            if (!picked) return; // Congrats already shown by loadGroup
+            if (!picked) return;
             currentSyllable = picked.syllable;
-            currentSyllable.pickIndex = picked.index; // Store index *in the group*
+            currentSyllable.pickIndex = picked.index;
         }
 
-        // --- [NOVO] Lógica de Contexto ---
         if (currentSyllable.contexts && currentSyllable.contexts.length > 0) {
             const randomIndex = Math.floor(Math.random() * currentSyllable.contexts.length);
             const contextHTML = currentSyllable.contexts[randomIndex].replace(/\*\*(.*?)\*\*/g, '<high>$1</high>');
-            contextHintText.innerHTML = contextHTML;
-            contextHintBox.style.display = 'flex';
+            dom.contextHintText.innerHTML = contextHTML;
+            dom.contextHintBox.style.display = 'flex';
         } else {
-            contextHintBox.style.display = 'none';
+            dom.contextHintBox.style.display = 'none';
         }
-        // --- Fim da Lógica de Contexto ---
-
 
         if (selectedVoice && utterance) {
             utterance.text = currentSyllable.question;
@@ -1773,20 +1573,15 @@
         translationElement.classList.add('translation');
         translationElement.textContent = '';
         
-        // --- Apply Mode-Specific Hints ---
         if (evaluativeModeEnabled) {
-            // FSRS Mode: No hints
             syllableEl.style.color = 'inherit';
             syllableEl.textContent = currentSyllable.question;
             translationElement.style.color = 'inherit';
             
-            // Center position
             syllableEl.style.left = '50%';
             syllableEl.style.top = '50%';
             syllableEl.style.transform = 'translate(-50%, -50%)';
-
         } else {
-            // Free Mode: Apply hints
             const color = generateColor(currentSyllable.question);
             const hintColor = colorHintEnabled ? color : 'inherit';
             syllableEl.style.color = hintColor;
@@ -1809,7 +1604,6 @@
                 syllableEl.style.transform = 'translate(-50%, -50%)';
             }
         }
-        // --- End Apply Hints ---
 
         syllableEl.appendChild(translationElement);
         currentSyllableElement = syllableEl;
@@ -1830,19 +1624,16 @@
         currentSyllable = null;
         if (currentSyllableElement) currentSyllableElement.remove();
         if (translationElement) translationElement.remove();
-        contextHintBox.style.display = 'none'; // [NOVO] Esconde contexto
+        dom.contextHintBox.style.display = 'none';
         
         score = 0;
-        sessionReviewQueue = []; // Reset for both modes
+        sessionReviewQueue = [];
 
         if (evaluativeModeEnabled) {
-            // FSRS Mode
             currentGroupIndex = 0;
             currentGroup = [];
             cardStartTime = Date.now();
-            // syllableList is already the full deck, no shuffling needed here
         } else {
-            // Free Mode
             currentGroupIndex = 0;
             currentGroup = [];
             if (randomToggleEnabled) {
@@ -1885,244 +1676,238 @@
         requestAnimationFrame(fall);
     }
 
-    // --- Event Listeners ---
+    function setupSettingToggle(toggle, callback) {
+        toggle.addEventListener('change', () => {
+            callback(toggle.checked);
+            saveCurrentDeckSettings();
+        });
+    }
 
-    // Settings Toggles (in-game)
-    correctSoundToggle.addEventListener('change', () => {
-        correctSoundEnabled = correctSoundToggle.checked;
-        saveCurrentDeckSettings();
-    });
-    wrongSoundToggle.addEventListener('change', () => {
-        wrongSoundEnabled = wrongSoundToggle.checked;
-        saveCurrentDeckSettings();
-    });
-    restartOnWrongToggle.addEventListener('change', () => {
-        restartOnWrongEnabled = restartOnWrongToggle.checked;
-        saveCurrentDeckSettings();
-    });
-    answerTipRange.addEventListener('input', () => {
-        answerTipLetters = parseInt(answerTipRange.value);
-        answerTipValue.textContent = answerTipLetters;
+    setupSettingToggle(dom.correctSoundToggle, (val) => correctSoundEnabled = val);
+    setupSettingToggle(dom.wrongSoundToggle, (val) => wrongSoundEnabled = val);
+    setupSettingToggle(dom.restartOnWrongToggle, (val) => restartOnWrongEnabled = val);
+    
+    dom.answerTipRange.addEventListener('input', () => {
+        answerTipLetters = parseInt(dom.answerTipRange.value);
+        dom.answerTipValue.textContent = answerTipLetters;
         saveCurrentDeckSettings();
         if (currentSyllable && !evaluativeModeEnabled) {
             displaySyllable();
         }
     });
-    randomToggle.addEventListener('change', () => {
-        randomToggleEnabled = randomToggle.checked;
-        saveCurrentDeckSettings();
-        if (currentSyllable && !evaluativeModeEnabled) {
-            startGame();
-        }
+
+    setupSettingToggle(dom.randomToggle, (val) => {
+        randomToggleEnabled = val;
+        if (currentSyllable && !evaluativeModeEnabled) startGame();
     });
-    colorHintToggle.addEventListener('change', () => {
-        colorHintEnabled = colorHintToggle.checked;
-        saveCurrentDeckSettings();
-        if (currentSyllable && !evaluativeModeEnabled) {
-            displaySyllable();
-        }
+
+    setupSettingToggle(dom.colorHintToggle, (val) => {
+        colorHintEnabled = val;
+        if (currentSyllable && !evaluativeModeEnabled) displaySyllable();
     });
-    positionHintToggle.addEventListener('change', () => {
-        positionHintEnabled = positionHintToggle.checked;
-        saveCurrentDeckSettings();
-        if (currentSyllable && !evaluativeModeEnabled) {
-            displaySyllable();
-        }
+
+    setupSettingToggle(dom.positionHintToggle, (val) => {
+        positionHintEnabled = val;
+        if (currentSyllable && !evaluativeModeEnabled) displaySyllable();
     });
-    darkModeToggle.addEventListener('change', () => {
-        darkModeEnabled = darkModeToggle.checked;
+
+    setupSettingToggle(dom.darkModeToggle, (val) => {
+        darkModeEnabled = val;
         document.body.classList.toggle('dark-mode', darkModeEnabled);
-        saveCurrentDeckSettings();
-        if (currentSyllable) {
-            displaySyllable();
-        }
-    });
-    evaluativeModeToggle.addEventListener('change', () => {
-        evaluativeModeEnabled = evaluativeModeToggle.checked;
-        toggleHintOptions(evaluativeModeEnabled); // Toggle UI on change
-        saveCurrentDeckSettings();
-        if (currentSyllable) {
-            startGame();
-        }
+        if (currentSyllable) displaySyllable();
     });
 
+    dom.evaluativeModeToggle.addEventListener('change', () => {
+        evaluativeModeEnabled = dom.evaluativeModeToggle.checked;
+        toggleHintOptions(evaluativeModeEnabled);
+        saveCurrentDeckSettings();
+        if (currentSyllable) startGame();
+    });
 
-    // Modal/Panel Buttons
-    settingsBtn.addEventListener('click', () => {
+    dom.settingsBtn.addEventListener('click', () => {
         if (currentDeckId) {
             openSettingsModal(currentDeckId);
         } else {
             alert("Por favor, selecione um deck primeiro.");
-            deckModal.style.display = 'flex';
+            dom.deckModal.style.display = 'flex';
         }
     });
     
-    deckSelectBtn.addEventListener('click', () => {
-        deckModal.style.display = 'flex';
-        // Stop game
+    dom.deckSelectBtn.addEventListener('click', () => {
+        dom.deckModal.style.display = 'flex';
         if (currentSyllableElement) currentSyllableElement.remove();
         currentSyllable = null;
-        contextHintBox.style.display = 'none'; // [NOVO] Esconde contexto
+        dom.contextHintBox.style.display = 'none';
         if (speechSynthesis.speaking) speechSynthesis.cancel();
     });
     
-    addDeckBtn.addEventListener('click', () => {
-        openSettingsModal(null); // Open in "create" mode
+    dom.addDeckBtn.addEventListener('click', () => {
+        openSettingsModal(null);
     });
     
-    cancelSettingsBtn.addEventListener('click', () => {
-        settingsModal.style.display = 'none';
+    dom.cancelSettingsBtn.addEventListener('click', () => {
+        dom.settingsModal.style.display = 'none';
     });
-    
-    // Game Keydown Listener
-    document.addEventListener('keydown', e => {
-        // Stop game input if any modal is open
-        if (settingsModal.style.display === 'flex' || 
-            deckModal.style.display === 'flex' ||
-            jsonEditorModal.style.display === 'flex' ||
-            mergeModal.style.display === 'flex' ||
-            statsModal.style.display === 'flex' ||
-            congratsModal.style.display === 'flex'
-            ) {
+
+    dom.statsCloseBtn.addEventListener('click', () => {
+        dom.statsModal.style.display = 'none';
+    });
+
+    function isModalOpen() {
+        return dom.settingsModal.style.display === 'flex' || 
+               dom.deckModal.style.display === 'flex' ||
+               dom.jsonEditorModal.style.display === 'flex' ||
+               dom.mergeModal.style.display === 'flex' ||
+               dom.statsModal.style.display === 'flex' ||
+               dom.congratsModal.style.display === 'flex';
+    }
+
+    function handleKeyInput(key) {
+        if (!firstKeyTime) firstKeyTime = Date.now();
+        userTyped += key;
+        if (translationElement) {
+            translationElement.textContent = userTyped;
+        }
+    }
+
+    function handleBackspace() {
+        userTyped = userTyped.slice(0, -1);
+        if (translationElement) {
+            translationElement.textContent = userTyped;
+        }
+    }
+
+    function handleVoiceRepeat() {
+        if (selectedVoice && utterance) {
+            utterance.text = currentSyllable.question;
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            speechSynthesis.speak(utterance);
+        }
+    }
+
+    function handleFsrsEnter() {
+        if (hintUsed) {
+            hintUsed = false;
+            userTyped = '';
+            if (translationElement) translationElement.textContent = '';
+            if (currentSyllableElement) currentSyllableElement.remove();
+            displaySyllable();
             return;
         }
+
+        const endTime = Date.now();
+        const reactionTime = firstKeyTime ? firstKeyTime - cardStartTime : endTime - cardStartTime;
+        const typingTime = firstKeyTime ? endTime - firstKeyTime : 0;
+        firstKeyTime = 0;
+
+        const levDistance = levenshtein(userTyped, currentSyllable.answer);
+        const normalizedSim = 1 - (levDistance / Math.max(userTyped.length, currentSyllable.answer.length, 1));
+        const grade = calculateGrade(normalizedSim, { reactionTime, typingTime });
+
+        updateFsrsData(currentSyllable, grade);
+        saveDecks();
+
+        if (userTyped !== currentSyllable.answer) {
+            if (wrongSoundEnabled) {
+                wrongSound.currentTime = 0;
+                wrongSound.play();
+            }
+            if (translationElement) {
+                translationElement.textContent = currentSyllable.answer;
+            }
+            userTyped = '';
+            hintUsed = true;
+            sessionReviewQueue.push(currentSyllable);
+            cardStartTime = Date.now();
+        } else {
+            if (correctSoundEnabled) {
+                correctSound.currentTime = 0;
+                correctSound.play();
+            }
+            if (currentSyllableElement) {
+                createParticle(currentSyllableElement);
+            }
+            score++;
+            if (translationElement) translationElement.textContent = '';
+            if (currentSyllableElement) currentSyllableElement.remove();
+            cardStartTime = Date.now();
+            displaySyllable();
+        }
+        updateScoreDisplay();
+    }
+
+    function handleFreeModeEnter() {
+        if (userTyped === currentSyllable.answer) {
+            if (!hintUsed) {
+                if (correctSoundEnabled) {
+                    correctSound.currentTime = 0;
+                    correctSound.play();
+                }
+                if (currentSyllableElement) {
+                    createParticle(currentSyllableElement);
+                }
+                score++;
+                updateScoreDisplay();
+                currentGroup.splice(currentSyllable.pickIndex, 1);
+
+                if (currentGroup.length === 0) {
+                    currentGroupIndex++;
+                    loadGroup(currentGroupIndex);
+                }
+            }
+            if (translationElement) translationElement.textContent = '';
+            if (currentSyllableElement) currentSyllableElement.remove();
+            displaySyllable();
+        } else {
+            if (translationElement) {
+                translationElement.textContent = currentSyllable.answer;
+            }
+
+            if (wrongSoundEnabled) {
+                wrongSound.currentTime = 0;
+                wrongSound.play();
+            }
         
+            userTyped = '';
+            hintUsed = true;
+
+            if (restartOnWrongEnabled) {
+                setTimeout(() => {
+                    alert("Você errou, Reiniciando jogo!");
+                    startGame();
+                }, 100);
+            }
+        }
+    }
+    
+    document.addEventListener('keydown', e => {
+        if (isModalOpen()) return;
         if (!currentSyllable || !currentSyllable.answer) return;
 
         const key = e.key.toLowerCase();
 
         if (/^[a-z ']$/.test(key) && key.length === 1) {
-            if (!firstKeyTime) firstKeyTime = Date.now();
-            userTyped += key;
-            if (translationElement) {
-                translationElement.textContent = userTyped;
-            }
+            handleKeyInput(key);
         } else if (e.key === 'Backspace') {
-            userTyped = userTyped.slice(0, -1);
-            if (translationElement) {
-                translationElement.textContent = userTyped;
-            }
+            handleBackspace();
         } else if (e.key === 'Control') {
-            if (selectedVoice && utterance) {
-                utterance.text = currentSyllable.question;
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
-                }
-                speechSynthesis.speak(utterance);
-            }
+            handleVoiceRepeat();
         } else if (e.key === 'Enter') {
-            
             if (evaluativeModeEnabled) {
-                // --- FSRS Mode Logic ---
-
-                if (hintUsed) {
-                    // This means they got it wrong (grade 0) and are pressing Enter to continue
-                    hintUsed = false;
-                    userTyped = '';
-                    if (translationElement) translationElement.textContent = '';
-                    if (currentSyllableElement) currentSyllableElement.remove();
-                    displaySyllable();
-                    return;
-                }
-
-                const endTime = Date.now();
-                const reactionTime = firstKeyTime ? firstKeyTime - cardStartTime : endTime - cardStartTime;
-                const typingTime = firstKeyTime ? endTime - firstKeyTime : 0;
-                firstKeyTime = 0
-
-                const levDistance = levenshtein(userTyped, currentSyllable.answer);
-                const normalizedSim = 1 - (levDistance / Math.max(userTyped.length, currentSyllable.answer.length, 1));
-                const grade = calculateGrade(normalizedSim, { reactionTime, typingTime });
-
-                updateFsrsData(currentSyllable, grade);
-                saveDecks(); // Save FSRS progress
-
-                if (userTyped !== currentSyllable.answer) {
-                    if (wrongSoundEnabled) {
-                        wrongSound.currentTime = 0;
-                        wrongSound.play();
-                    }
-                    if (translationElement) {
-                        translationElement.textContent = currentSyllable.answer;
-                    }
-                    userTyped = '';
-                    hintUsed = true; // Flag to wait for next Enter
-                    sessionReviewQueue.push(currentSyllable); // Re-add to end of session queue
-                    cardStartTime = Date.now();
-                
-                } else { // Hard, Good, Easy (All correct)
-                    if (correctSoundEnabled) {
-                        correctSound.currentTime = 0;
-                        correctSound.play();
-                    }
-                    if (currentSyllableElement) {
-                        createParticle(currentSyllableElement);
-                    }
-                    score++;
-                    if (translationElement) translationElement.textContent = '';
-                    if (currentSyllableElement) currentSyllableElement.remove();
-                     cardStartTime = Date.now();
-                    displaySyllable(); // Pick next card
-                }
-                updateScoreDisplay(); // Update stats
-
+                handleFsrsEnter();
             } else {
-                // --- Free Mode Logic ---
-                
-                if (userTyped === currentSyllable.answer) {
-                    if (!hintUsed) {
-                        if (correctSoundEnabled) {
-                            correctSound.currentTime = 0;
-                            correctSound.play();
-                        }
-                        if (currentSyllableElement) {
-                            createParticle(currentSyllableElement);
-                        }
-                        score++;
-                        updateScoreDisplay();
-                        currentGroup.splice(currentSyllable.pickIndex, 1);
-
-                        if (currentGroup.length === 0) {
-                            currentGroupIndex++;
-                            loadGroup(currentGroupIndex);
-                        }
-                    }
-                    if (translationElement) translationElement.textContent = '';
-                    if (currentSyllableElement) currentSyllableElement.remove();
-                    displaySyllable();
-                } else {
-                    if (translationElement) {
-                        translationElement.textContent = currentSyllable.answer;
-                    }
-
-                    if (wrongSoundEnabled) {
-                        wrongSound.currentTime = 0;
-                        wrongSound.play();
-                    }
-                
-                    userTyped = '';
-                    hintUsed = true;
-
-                    if (restartOnWrongEnabled) {
-                        setTimeout(()=>{
-                            alert("Vocẽ errou, Reiniciando jogo!")
-                            startGame()
-                        }, 100)
-                    }
-
-                }
+                handleFreeModeEnter();
             }
         }
     });
 
-    // --- App Initialization ---
-    
     function init() {
         populateVoices();
         loadDecks();
-        migrateOldData(); // Run migration *after* loading existing decks
+        migrateOldData();
         renderDeckModal();
-        // Deck modal is shown by default via CSS
     }
     
     init();
