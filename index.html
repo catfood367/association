@@ -455,9 +455,9 @@
         <h1 id="statsDeckName">Estatísticas</h1>
         <ul id="statsList">
             <li>Total de Cartões: <span id="statsTotal">0</span></li>
-            <li>Novos: <span id="statsNew">0</span></li>
-            <li>Aprendendo: <span id="statsLearning">0</span></li>
             <li>Revisão: <span id="statsDue">0</span></li>
+            <li>Aprendendo: <span id="statsLearning">0</span></li>
+            <li>Novos: <span id="statsNew">0</span></li>
             <li>Maduros: <span id="statsMature">0</span></li>
         </ul>
         <button id="statsCloseBtn" class="btn btn-primary">Fechar</button>
@@ -1731,7 +1731,7 @@ function samePronunciation(word1, word2) {
 
         if (evaluativeModeEnabled) {
             const stats = calculateDeckStats(deck.content);
-            dom.scoreText.textContent = `| Pontuação: ${score} | Novas: ${stats.newCount} | Revisão: ${stats.dueCount + sessionReviewQueue.length}`;
+            dom.scoreText.textContent = `| Pontuação: ${score} | Revisão: ${stats.dueCount + sessionReviewQueue.length} | Novas: ${stats.newCount}`;
         } else {
             const totalLevels = Math.ceil(syllableList.length / groupSize);
             dom.scoreText.textContent = `| Pontuação: ${score} | Level: ${currentGroupIndex + 1} / ${totalLevels}`;
