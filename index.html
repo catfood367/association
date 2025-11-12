@@ -768,24 +768,65 @@
     }
 
     // --- Fim: Funções de Configurações Globais ---
-
     function levenshtein(a, b) {
-        const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
-        for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
-        for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+    const dp = Array.from({ length: a.length + 1 }, () =>
+        Array(b.length + 1).fill(0)
+    );
+
+    for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+    for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= a.length; i++) {
         for (let j = 1; j <= b.length; j++) {
-            for (let i = 1; i <= a.length; i++) {
-                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-                matrix[j][i] = Math.min(
-                    matrix[j][i - 1] + 1,
-                    matrix[j - 1][i] + 1,
-                    matrix[j - 1][i - 1] + cost
-                );
-            }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+            dp[i - 1][j] + 1,      // deleção
+            dp[i][j - 1] + 1,      // inserção
+            dp[i - 1][j - 1] + cost // substituição
+        );
         }
-        return matrix[b.length][a.length];
     }
-    
+
+    return dp[a.length][b.length];
+    }
+
+
+// Normaliza uma palavra para “pronúncia”
+function normalizePronunciation(word) {
+    const russianPhoneticMap = {
+  'ё': 'е',
+  'й': 'и',
+  'ъ': '',
+  'ь': '',
+  'щ': 'ш',
+  'ы': 'и',
+  'э': 'е',
+  'ю': 'у',
+  'я': 'а',
+  // consoantes opcionais que podem confundir
+  'ц': 'ц',
+  'г': 'г',
+  'х': 'х',
+  'ш': 'ш',
+  'ж': 'ж',
+  'ч': 'ч'
+  // adicione mais conforme necessário
+};
+  return word
+    .normalize('NFKC')
+    .toLowerCase()
+    .split('')
+    .map(c => russianPhoneticMap[c] ?? c)
+    .join('');
+}
+
+// Função principal: verifica se duas palavras têm a mesma pronúncia
+function samePronunciation(word1, word2) {
+  const norm1 = normalizePronunciation(word1);
+  const norm2 = normalizePronunciation(word2);
+  return norm1 === norm2;
+}
+
     function calculateRetention(card) {
         if (!card.lastReview || card.s === undefined || card.s <= 0.1) return 1.0;
         const now = Date.now();
@@ -1502,6 +1543,7 @@
     speechSynthesis.onvoiceschanged = populateVoices;
 
     function initSpeechRecognition() {
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             console.warn('Speech Recognition API not supported');
@@ -1509,51 +1551,50 @@
         }
 
         recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 3;
+        recognition.continuous = true;
+        recognition.interimResults = true
+
 
         recognition.onresult = (event) => {
-            let interimTranscript = '';
-            let finalTranscript = '';
-
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalTranscript += transcript;
-                } else {
-                    interimTranscript += transcript;
-                }
+            if (!isRecognizing){
+                return
             }
+            const transcript = event.results[event.results.length - 1][0].transcript;
 
-            const displayText = finalTranscript || interimTranscript;
             if (translationElement) {
-                translationElement.textContent = displayText;
+                translationElement.textContent = transcript;
                 translationElement.dataset.isHint = 'false';
-            }
+                
+                let found = false
+                transcript.split(" ").forEach(word=>{
+                    found = samePronunciation(currentSyllable.question, word)
+                })
 
-            if (finalTranscript && currentSyllable) {
-                const normalizedInput = finalTranscript.toLowerCase().trim();
-                const normalizedQuestion = currentSyllable.question.toLowerCase().trim();
                 
-                let isCorrect = false;
-                
-                for (let i = 0; i < event.results[event.results.length - 1].length; i++) {
-                    const alternative = event.results[event.results.length - 1][i];
-                    const altText = alternative.transcript.toLowerCase().trim();
-                    
-                    if (altText === normalizedQuestion && alternative.confidence > 0.7) {
-                        isCorrect = true;
-                        break;
+                if (found) {
+                    hintUsed = false
+                    if (!hintUsed) {
+                        if (correctSoundEnabled) {
+                            correctSound.currentTime = 0;
+                            correctSound.play();
+                        }
+                        if (currentSyllableElement) {
+                            createParticle(currentSyllableElement);
+                        }
+                        score++;
+                        updateScoreDisplay();
+                        currentGroup.splice(currentSyllable.pickIndex, 1);
+
+                        if (currentGroup.length === 0) {
+                            currentGroupIndex++;
+                            loadGroup(currentGroupIndex);
+                        }
+
+                        translationElement.textContent = '';
+                        currentSyllableElement.remove();
+                        stopRecognition()
+                        displaySyllable();
                     }
-                }
-
-                if (!isCorrect && normalizedInput === normalizedQuestion) {
-                    isCorrect = true;
-                }
-
-                if (isCorrect) {
-                    handleCorrectPronunciation();
                 }
             }
         };
@@ -1577,20 +1618,9 @@
         try {
             recognition.lang = selectedVoice ? selectedVoice.lang : 'en-US';
 
-            if (currentSyllable && currentSyllable.question) {
-                if (recognition.grammars !== undefined) {
-                    const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
-                    if (SpeechGrammarList) {
-                        const grammarList = new SpeechGrammarList();
-                        const grammar = `#JSGF V1.0; grammar words; public <word> = ${currentSyllable.question};`;
-                        grammarList.addFromString(grammar, 1);
-                        recognition.grammars = grammarList;
-                    }
-                }
-            }
-
             recognition.start();
             isRecognizing = true;
+            translationElement.textContent = ''
         } catch (e) {
             if (e.name !== 'InvalidStateError') {
                 console.error('Error starting recognition:', e);
@@ -1607,52 +1637,6 @@
                 console.error('Error stopping recognition:', e);
             }
             isRecognizing = false;
-        }
-    }
-
-    function handleCorrectPronunciation() {
-        stopRecognition();
-        
-        if (!hintUsed) {
-            if (correctSoundEnabled) {
-                correctSound.currentTime = 0;
-                correctSound.play();
-            }
-            if (currentSyllableElement) {
-                createParticle(currentSyllableElement);
-            }
-            score++;
-            updateScoreDisplay();
-            
-            if (!evaluativeModeEnabled) {
-                currentGroup.splice(currentSyllable.pickIndex, 1);
-                if (currentGroup.length === 0) {
-                    currentGroupIndex++;
-                    loadGroup(currentGroupIndex);
-                }
-            }
-            
-            if (translationElement) translationElement.textContent = '';
-            if (currentSyllableElement) currentSyllableElement.remove();
-            
-            if (evaluativeModeEnabled) {
-                const endTime = Date.now();
-                const reactionTime = firstKeyTime ? firstKeyTime - cardStartTime : endTime - cardStartTime;
-                const typingTime = 0;
-                firstKeyTime = 0;
-
-                const grade = 3;
-                updateFsrsData(currentSyllable, grade);
-                saveDecks();
-                cardStartTime = Date.now();
-            }
-            
-            displaySyllable();
-        } else {
-            hintUsed = false;
-            if (translationElement) translationElement.textContent = '';
-            if (currentSyllableElement) currentSyllableElement.remove();
-            displaySyllable();
         }
     }
 
@@ -1900,7 +1884,7 @@
         document.body.appendChild(syllableEl);
 
         if (pronunciationModeEnabled) {
-            startRecognition();
+            setTimeout(startRecognition, 200)
         }
     }
 
