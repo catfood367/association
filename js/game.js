@@ -190,14 +190,6 @@ function _cleanupGameUI() {
     dom.contextHintBox.style.display = 'none';
 }
 
-function _setupRecognitionLang() {
-    if (state.selectedVoice && state.recognition) {
-        state.recognition.lang = state.selectedVoice.lang;
-    } else if (state.recognition) {
-        state.recognition.lang = 'en-US';
-    }
-}
-
 function _initializeDeckMode() {
     if (state.evaluativeModeEnabled) {
         state.cardStartTime = Date.now();
@@ -215,7 +207,6 @@ export function startGame() {
     speech.selectVoice();
     _cleanupGameUI();
     _resetGameState();
-    _setupRecognitionLang();
     _initializeDeckMode();
 
     updateScoreDisplay();
@@ -265,9 +256,12 @@ function _updateScoreAndGroup() {
 }
 
 export function handleCorrectPronunciation() {
+    if (!state.hintUsed) {
+       _playCorrectFeedback();
+       _updateScoreAndGroup();
+    }
+
     state.hintUsed = false;
-    _playCorrectFeedback();
-    _updateScoreAndGroup();
 
     if (state.translationElement) state.translationElement.textContent = '';
     if (state.currentSyllableElement) state.currentSyllableElement.remove();

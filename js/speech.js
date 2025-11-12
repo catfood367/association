@@ -107,8 +107,27 @@ export function initSpeechRecognition() {
     const SpeechRecognition = _checkSpeechRecognitionSupport();
     if (!SpeechRecognition) return;
 
+    if (state.recognition) {
+        try {
+            state.recognition.abort();
+        } catch (e) {
+            console.log("Recognition aborted to change language.");
+        }
+        state.recognition.onresult = null;
+        state.recognition.onend = null;
+        state.recognition.onerror = null;
+        state.recognition = null;
+        state.isRecognizing = false;
+    }
+
     state.recognition = new SpeechRecognition();
     _configureRecognition(state.recognition);
+
+    if (state.selectedVoice) {
+        state.recognition.lang = state.selectedVoice.lang;
+    } else {
+        state.recognition.lang = 'en-US';
+    }
 
     state.recognition.onresult = _handleRecognitionResult;
     state.recognition.onend = _handleRecognitionEnd;
@@ -165,9 +184,7 @@ function _setVoiceFromSelection() {
 }
 
 function _updateRecognitionLanguage() {
-    if (state.recognition && state.selectedVoice) {
-        state.recognition.lang = state.selectedVoice.lang;
-    }
+    initSpeechRecognition();
 }
 
 function _speakCurrentSyllable() {
@@ -184,16 +201,9 @@ function _speakCurrentSyllable() {
     }
 }
 
-function _initRecognitionIfNeeded() {
-    if (!state.recognition) {
-        initSpeechRecognition();
-    }
-}
-
 export function selectVoice() {
     _setVoiceFromSelection();
     _updateRecognitionLanguage();
     _speakCurrentSyllable();
-    _initRecognitionIfNeeded();
     startRecognition();
 }

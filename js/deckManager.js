@@ -3,7 +3,7 @@ import * as utils from './utils.js';
 import * as fsrs from './fsrs.js';
 import { dom, renderDeckModal, showCustomAlert, showCustomConfirm, updateModeSettingsVisibility } from './ui.js';
 import { startGame } from './game.js';
-import { selectVoice } from './speech.js';
+import { selectVoice, stopRecognition } from './speech.js';
 
 export function loadDecks() {
     const decksJson = localStorage.getItem(DECK_STORAGE_KEY);
@@ -16,13 +16,11 @@ export function saveDecks() {
 
 function _applyVoiceSetting(voiceIndex) {
     if (voiceIndex && voiceIndex !== 'none') {
-        setTimeout(() => {
-            dom.voiceSelect.value = voiceIndex;
-            selectVoice();
-            if (state.recognition && state.selectedVoice) {
-                state.recognition.lang = state.selectedVoice.lang;
-            }
-        }, 500);
+        dom.voiceSelect.value = voiceIndex;
+        selectVoice();
+        if (state.recognition && state.selectedVoice) {
+            state.recognition.lang = state.selectedVoice.lang;
+        }
     } else {
         dom.voiceSelect.value = 'none';
         selectVoice();
@@ -37,6 +35,11 @@ export function applyDeckSettingsToGame(settings) {
     state.restartOnWrongEnabled = settings.restartOnWrongEnabled ?? false;
     state.evaluativeModeEnabled = settings.evaluativeModeEnabled ?? false;
     state.pronunciationModeEnabled = settings.pronunciationModeEnabled ?? false;
+
+    if (!state.pronunciationModeEnabled) {
+       stopRecognition();
+    }
+
     _applyVoiceSetting(settings.voiceIndex);
 }
 
@@ -127,18 +130,26 @@ export function applySettingsToModalUI(settings) {
     dom.positionHintToggle.checked = s.positionHintEnabled;
     dom.restartOnWrongToggle.checked = s.restartOnWrongEnabled;
     dom.answerTipInput.value = s.answerTipLetters;
-    
-    dom.modeFsrsToggle.checked = s.evaluativeModeEnabled;
-    dom.modePronunciationToggle.checked = s.pronunciationModeEnabled;
-    dom.modeFreeToggle.checked = !s.evaluativeModeEnabled && !s.pronunciationModeEnabled;
-
-    updateModeSettingsVisibility();
 
     setTimeout(() => {
         dom.voiceSelect.value = s.voiceIndex;
         if (!dom.voiceSelect.value && dom.voiceSelect.options.length > 0) {
             dom.voiceSelect.value = 'none';
         }
+
+        const isVoiceSelected = dom.voiceSelect.value !== 'none';
+        dom.modePronunciationToggle.disabled = !isVoiceSelected;
+        
+        let pMode = s.pronunciationModeEnabled;
+        if (!isVoiceSelected) {
+            pMode = false;
+        }
+ 
+        dom.modeFsrsToggle.checked = s.evaluativeModeEnabled;
+        dom.modePronunciationToggle.checked = pMode;
+        dom.modeFreeToggle.checked = !s.evaluativeModeEnabled && !pMode;
+ 
+        updateModeSettingsVisibility();
     }, 200);
 }
 

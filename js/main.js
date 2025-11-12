@@ -61,7 +61,18 @@ function _initCustomModalListeners() {
 
 function _initVoiceListeners() {
     speechSynthesis.onvoiceschanged = speech.populateVoices;
-    dom.voiceSelect.addEventListener('change', speech.selectVoice);
+    dom.voiceSelect.addEventListener('change', () => {
+    speech.selectVoice();
+
+    const isVoiceSelected = dom.voiceSelect.value !== 'none';
+    dom.modePronunciationToggle.disabled = !isVoiceSelected;
+    
+    if (!isVoiceSelected) {
+        dom.modePronunciationToggle.checked = false;
+        dom.modeFreeToggle.checked = !dom.modeFsrsToggle.checked;
+        updateModeSettingsVisibility(); 
+    }
+});
 }
 
 function _initTopPanelListeners() {
