@@ -1,4 +1,4 @@
-import { state, LAST_OPENED_DECK_ID } from './state.js';
+import { state, LAST_OPENED_DECK_ID, DECK_STORAGE_KEY } from './state.js';
 import * as utils from './utils.js';
 import * as fsrs from './fsrs.js';
 import { dom, renderDeckModal, showCustomAlert, showCustomConfirm, updateModeSettingsVisibility } from './ui.js';
@@ -6,12 +6,12 @@ import { startGame } from './game.js';
 import { selectVoice } from './speech.js';
 
 export function loadDecks() {
-    const decksJson = localStorage.getItem(state.DECK_STORAGE_KEY);
+    const decksJson = localStorage.getItem(DECK_STORAGE_KEY);
     state.allDecks = decksJson ? JSON.parse(decksJson) : [];
 }
 
 export function saveDecks() {
-    localStorage.setItem(state.DECK_STORAGE_KEY, JSON.stringify(state.allDecks));
+    localStorage.setItem(DECK_STORAGE_KEY, JSON.stringify(state.allDecks));
 }
 
 function _applyVoiceSetting(voiceIndex) {
