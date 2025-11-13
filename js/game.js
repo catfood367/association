@@ -156,23 +156,15 @@ export function displaySyllable() {
     _appendSyllableToDom(syllableEl, translationEl);
 
     if (state.pronunciationModeEnabled) {
-        if (state.selectedVoice && state.utterance) {
-            state.utterance.onend = () => {
-                speech.startRecognition();
-                state.utterance.onend = null;
-            };
-            state.utterance.onerror = (e) => {
-                console.error("Speech synthesis error, starting recognition anyway.", e);
-                speech.startRecognition();
-                state.utterance.onend = null;
-                state.utterance.onerror = null;
-            };
-            _speakSyllable(); 
-        } else {
-            setTimeout(speech.startRecognition, 200);
+        // Clear any pending callbacks from previous TTS plays
+        if (state.utterance) {
+            state.utterance.onend = null;
+            state.utterance.onerror = null;
         }
+        // Don't auto-speak, just start recognition
+        setTimeout(speech.startRecognition, 200);
     } else {
-        _speakSyllable();
+        _speakSyllable(); // Auto-speak in FSRS/Free mode
     }
 }
 

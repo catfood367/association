@@ -14,20 +14,32 @@ export function saveDecks() {
     localStorage.setItem(DECK_STORAGE_KEY, JSON.stringify(state.allDecks));
 }
 
-function _applyVoiceSetting(voiceIndex) {
-    if (voiceIndex && voiceIndex !== 'none') {
-        dom.voiceSelect.value = voiceIndex;
-        selectVoice();
+function _applyVoiceSetting(voiceIndex, onCompleteCallback) {
+    // Wait for the voice list to potentially populate
+    setTimeout(() => {
+        if (voiceIndex && voiceIndex !== 'none') {
+            dom.voiceSelect.value = voiceIndex;
+            // Check if the value was successfully set
+            if (dom.voiceSelect.value !== voiceIndex) {
+                 dom.voiceSelect.value = 'none';
+            }
+        } else {
+            dom.voiceSelect.value = 'none';
+        }
+        
+        selectVoice(); // This sets state.utterance
+        
         if (state.recognition && state.selectedVoice) {
             state.recognition.lang = state.selectedVoice.lang;
         }
-    } else {
-        dom.voiceSelect.value = 'none';
-        selectVoice();
-    }
+        
+        // Agora, chame o callback (startGame)
+        if (onCompleteCallback) onCompleteCallback();
+        
+    }, 200); // 200ms delay to match settings modal logic
 }
 
-export function applyDeckSettingsToGame(settings) {
+export function applyDeckSettingsToGame(settings, onCompleteCallback) {
     state.randomToggleEnabled = settings.randomToggleEnabled ?? false;
     state.colorHintEnabled = settings.colorHintEnabled ?? true;
     state.positionHintEnabled = settings.positionHintEnabled ?? true;
@@ -40,7 +52,7 @@ export function applyDeckSettingsToGame(settings) {
        stopRecognition();
     }
 
-    _applyVoiceSetting(settings.voiceIndex);
+    _applyVoiceSetting(settings.voiceIndex, onCompleteCallback);
 }
 
 export function selectDeck(deckId) {
@@ -56,10 +68,12 @@ export function selectDeck(deckId) {
     localStorage.setItem(LAST_OPENED_DECK_ID, deckId);
     state.syllableList = selectedDeck.content;
 
-    applyDeckSettingsToGame(selectedDeck.settings);
+    // Passa startGame como o callback
+    applyDeckSettingsToGame(selectedDeck.settings, startGame); 
+    
     dom.currentDeckNameSpan.textContent = selectedDeck.name;
     dom.deckModal.style.display = 'none';
-    startGame();
+    // startGame(); // Removido daqui
 }
 
 function _updateStatsUI(stats, deckName) {
@@ -125,12 +139,29 @@ export function getDefaultSettings() {
 export function applySettingsToModalUI(settings) {
     const s = settings || getDefaultSettings();
     
+    // Aplicar imediatamente
     dom.randomToggle.checked = s.randomToggleEnabled;
     dom.colorHintToggle.checked = s.colorHintEnabled;
     dom.positionHintToggle.checked = s.positionHintEnabled;
     dom.restartOnWrongToggle.checked = s.restartOnWrongEnabled;
     dom.answerTipInput.value = s.answerTipLetters;
 
+    // Verificar se a lista de vozes já carregou (simples)
+    const voicesLoaded = dom.voiceSelect.options.length > 1;
+    let pMode = s.pronunciationModeEnabled;
+
+    if (!voicesLoaded) {
+        pMode = false; // Desativa pronúncia se vozes não carregaram
+    }
+ 
+    dom.modeFsrsToggle.checked = s.evaluativeModeEnabled;
+    dom.modePronunciationToggle.checked = pMode;
+    dom.modeFreeToggle.checked = !s.evaluativeModeEnabled && !pMode;
+ 
+    // Mostrar/ocultar dicas imediatamente
+    updateModeSettingsVisibility();
+
+    // Atrasar apenas a seleção da voz e revalidação
     setTimeout(() => {
         dom.voiceSelect.value = s.voiceIndex;
         if (!dom.voiceSelect.value && dom.voiceSelect.options.length > 0) {
@@ -140,14 +171,14 @@ export function applySettingsToModalUI(settings) {
         const isVoiceSelected = dom.voiceSelect.value !== 'none';
         dom.modePronunciationToggle.disabled = !isVoiceSelected;
         
-        let pMode = s.pronunciationModeEnabled;
+        let pModeDelayed = s.pronunciationModeEnabled;
         if (!isVoiceSelected) {
-            pMode = false;
+            pModeDelayed = false;
         }
  
-        dom.modeFsrsToggle.checked = s.evaluativeModeEnabled;
-        dom.modePronunciationToggle.checked = pMode;
-        dom.modeFreeToggle.checked = !s.evaluativeModeEnabled && !pMode;
+        // Re-sincronizar os toggles caso a voz tenha mudado o estado
+        dom.modePronunciationToggle.checked = pModeDelayed;
+        dom.modeFreeToggle.checked = !s.evaluativeModeEnabled && !pModeDelayed;
  
         updateModeSettingsVisibility();
     }, 200);
@@ -285,9 +316,12 @@ function _finalizeDeckSave() {
     if (state.editModeDeckId && state.editModeDeckId === state.currentDeckId) {
         const updatedDeck = state.allDecks.find(d => d.id === state.currentDeckId);
         state.syllableList = updatedDeck.content;
-        applyDeckSettingsToGame(updatedDeck.settings);
+        
+        // Passa startGame como callback aqui também
+        applyDeckSettingsToGame(updatedDeck.settings, startGame);
+        
         dom.currentDeckNameSpan.textContent = updatedDeck.name;
-        startGame();
+        // startGame(); // Removido daqui
     }
 }
 

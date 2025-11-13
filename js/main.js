@@ -62,23 +62,64 @@ function _initCustomModalListeners() {
 
 // NOVA FUNÇÃO PARA TRATAR TECLAS GLOBAIS DE MODAIS
 function _handleGlobalModalKeys(e) {
-    // Verifica se o modal de CONFIRMAÇÃO está visível
     const isConfirmOpen = dom.customConfirmModal.style.display === 'flex';
-    // Verifica se o modal de ALERTA está visível
     const isAlertOpen = dom.customAlertModal.style.display === 'flex';
-    
-    if (isConfirmOpen) {
-        if (e.key === 'Enter') {
+
+    // Handle Enter key only for confirm/alert
+    if (e.key === 'Enter') {
+        if (isConfirmOpen) {
             e.preventDefault();
-            dom.customConfirmOkBtn.click(); // Simula o clique em OK
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            dom.customConfirmCancelBtn.click(); // Simula o clique em Cancelar
+            dom.customConfirmOkBtn.click();
+            return; // Handled
         }
-    } else if (isAlertOpen) {
-        if (e.key === 'Enter' || e.key === 'Escape') {
+        if (isAlertOpen) {
             e.preventDefault();
-            dom.customAlertCloseBtn.click(); // Simula o clique em Fechar
+            dom.customAlertCloseBtn.click();
+            return; // Handled
+        }
+        // Do not handle Enter for other modals
+    }
+
+    // Handle Escape key for all modals in order of priority
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        
+        if (isConfirmOpen) {
+            dom.customConfirmCancelBtn.click();
+            return;
+        }
+        if (isAlertOpen) {
+            dom.customAlertCloseBtn.click();
+            return;
+        }
+        if (dom.mergeModal.style.display === 'flex') {
+            dom.cancelMergeBtn.click();
+            return;
+        }
+        if (dom.jsonEditorModal.style.display === 'flex') {
+            dom.cancelJsonBtn.click();
+            return;
+        }
+        if (dom.statsModal.style.display === 'flex') {
+            dom.statsCloseBtn.click();
+            return;
+        }
+        if (dom.generalSettingsModal.style.display === 'flex') {
+            dom.generalSettingsCancelBtn.click();
+            return;
+        }
+        if (dom.settingsModal.style.display === 'flex') {
+            dom.settingsCancelBtn.click();
+            return;
+        }
+        if (dom.congratsModal.style.display === 'flex') {
+            dom.restartBtn.click();
+            return;
+        }
+        if (dom.deckModal.style.display === 'flex') {
+            dom.deckModal.style.display = 'none';
+            document.dispatchEvent(new CustomEvent('deckModalClosed')); 
+            return;
         }
     }
 }
@@ -254,7 +295,7 @@ function _handleKeyDown(e) {
 
     if (e.key === 'Backspace') {
         game.handleBackspace();
-    } else if (e.key === 'Control') {
+    } else if (e.key === 'Control' && !state.pronunciationModeEnabled) {
         game.handleVoiceRepeat();
     } else if (e.key === 'Enter') {
         _handleKeyEnter();
