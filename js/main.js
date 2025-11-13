@@ -1,3 +1,4 @@
+// [main.js]
 import { state, LAST_OPENED_DECK_ID } from './state.js';
 import { dom, showCustomAlert, showCustomConfirm, loadGlobalSettings, saveGlobalSettings, renderDeckModal, initModalCloseListeners, updateModeSettingsVisibility, isModalOpen } from './ui.js';
 import * as game from './game.js';
@@ -58,6 +59,30 @@ function _initCustomModalListeners() {
         state.currentConfirmOnCancel = null;
     });
 }
+
+// NOVA FUNÇÃO PARA TRATAR TECLAS GLOBAIS DE MODAIS
+function _handleGlobalModalKeys(e) {
+    // Verifica se o modal de CONFIRMAÇÃO está visível
+    const isConfirmOpen = dom.customConfirmModal.style.display === 'flex';
+    // Verifica se o modal de ALERTA está visível
+    const isAlertOpen = dom.customAlertModal.style.display === 'flex';
+    
+    if (isConfirmOpen) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            dom.customConfirmOkBtn.click(); // Simula o clique em OK
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            dom.customConfirmCancelBtn.click(); // Simula o clique em Cancelar
+        }
+    } else if (isAlertOpen) {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault();
+            dom.customAlertCloseBtn.click(); // Simula o clique em Fechar
+        }
+    }
+}
+// FIM DA NOVA FUNÇÃO
 
 function _initVoiceListeners() {
     speechSynthesis.onvoiceschanged = speech.populateVoices;
@@ -233,6 +258,9 @@ function _handleKeyDown(e) {
         game.handleVoiceRepeat();
     } else if (e.key === 'Enter') {
         _handleKeyEnter();
+    } else if (e.key === 'Alt') { // Bloco da exclusão rápida
+        e.preventDefault();
+        game.handleDeleteCurrentCardRequest();
     } else {
         _handleKeyLetter(key);
     }
@@ -241,6 +269,10 @@ function _handleKeyDown(e) {
 function _initGameListeners() {
     document.addEventListener('keydown', _handleKeyDown);
     document.addEventListener('pronunciationSuccess', game.handleCorrectPronunciation);
+    document.addEventListener('cardDeleted', () => {
+        deckManager.saveDecks();
+        deckManager.renderDeckModal();
+    });
 }
 
 function _initModalCloseResumeListeners() {
@@ -265,6 +297,10 @@ function init() {
     _initDeckSettingsListeners();
     _initGameListeners();
     _initModalCloseResumeListeners();
+    
+    // ADICIONAR ESTE OUVINTE GLOBAL PARA CONTROLE DE TECLAS DE MODAIS
+    document.addEventListener('keydown', _handleGlobalModalKeys);
+    
     _loadLastDeck();
 }
 

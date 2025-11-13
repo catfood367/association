@@ -2,7 +2,7 @@ import { state, GROUP_SIZE, correctSound, wrongSound } from './state.js';
 import * as utils from './utils.js';
 import * as fsrs from './fsrs.js';
 import * as speech from './speech.js';
-import { dom, showCongrats, updateScoreDisplay, createParticle, showCustomAlert } from './ui.js';
+import { dom, showCongrats, updateScoreDisplay, createParticle, showCustomAlert, showCustomConfirm } from './ui.js';
 
 let lastPickedIndex = -1;
 
@@ -385,10 +385,65 @@ function _handleFreeModeIncorrect() {
     }
 }
 
+function _deleteCurrentCardLogic() {
+    if (!state.currentSyllable || !state.currentDeckId) return false;
+
+    const deck = state.allDecks.find(d => d.id === state.currentDeckId);
+    if (!deck) return false;
+
+    const q = state.currentSyllable.question;
+    const a = state.currentSyllable.answer;
+
+    let cardRemoved = false;
+
+    const cardIndexInDeck = deck.content.findIndex(c => c.question === q && c.answer === a);
+    if (cardIndexInDeck > -1) {
+        deck.content.splice(cardIndexInDeck, 1);
+        cardRemoved = true;
+    }
+    const cardIndexInSession = state.syllableList.findIndex(c => c.question === q && c.answer === a);
+    if (cardIndexInSession > -1) {
+        state.syllableList.splice(cardIndexInSession, 1);
+    }
+
+    const cardIndexInGroup = state.currentGroup.findIndex(c => c.question === q && c.answer === a);
+    if (cardIndexInGroup > -1) {
+        state.currentGroup.splice(cardIndexInGroup, 1);
+    }
+
+    const cardIndexInQueue = state.sessionReviewQueue.findIndex(c => c.question === q && c.answer === a);
+    if (cardIndexInQueue > -1) {
+        state.sessionReviewQueue.splice(cardIndexInQueue, 1);
+    }
+    
+    return cardRemoved;
+}
+
 export function handleFreeModeEnter() {
     if (state.userTyped === state.currentSyllable.answer) {
         _handleFreeModeCorrect();
     } else {
         _handleFreeModeIncorrect();
     }
+}
+
+export function handleDeleteCurrentCardRequest() {
+    if (!state.currentSyllable) return;
+
+    const cardQuestion = state.currentSyllable.question;
+    const msg = `Tem certeza que quer remover o card "${cardQuestion}" permanentemente do deck?\n\nEsta ação não pode ser desfeita.`;
+    
+    showCustomConfirm(msg, () => {
+        if (_deleteCurrentCardLogic()) {
+            document.dispatchEvent(new CustomEvent('cardDeleted'));
+            updateScoreDisplay(); 
+            
+            if (speechSynthesis.speaking) speechSynthesis.cancel();
+            speech.stopRecognition();
+
+            displaySyllable();
+        } else {
+            showCustomAlert("Erro: Não foi possível encontrar ou remover o card.");
+        }
+    });
 }
