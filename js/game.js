@@ -2,7 +2,7 @@ import { state, GROUP_SIZE, correctSound, wrongSound } from './state.js';
 import * as utils from './utils.js';
 import * as fsrs from './fsrs.js';
 import * as speech from './speech.js';
-import { dom, showCongrats, updateScoreDisplay, createParticle, showCustomAlert, showCustomConfirm } from './ui.js';
+import { dom, showCongrats, updateScoreDisplay, createParticle, showCustomAlert, showCustomConfirm, openEditCardModal } from './ui.js';
 
 let lastPickedIndex = -1;
 
@@ -438,4 +438,42 @@ export function handleDeleteCurrentCardRequest() {
             showCustomAlert("Erro: Não foi possível encontrar ou remover o card.");
         }
     });
+}
+
+export function handleEditCurrentCardRequest() {
+    if (!state.currentSyllable || !state.currentDeckId) return;
+
+    speech.stopRecognition();
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+
+    openEditCardModal(state.currentSyllable);
+}
+
+export function updateCurrentCard(newData) {
+    if (!state.currentSyllable) return;
+
+    const oldQ = state.currentSyllable.question;
+    const oldA = state.currentSyllable.answer;
+    const newQ = newData.question;
+    const newA = newData.answer;
+
+    // Update the card object in place
+    state.currentSyllable.question = newQ;
+    state.currentSyllable.answer = newA;
+    state.currentSyllable.hint = newData.hint;
+
+    // If question or answer changed, reset FSRS stats
+    if (newQ !== oldQ || newA !== oldA) {
+        state.currentSyllable.s = 0.1;
+        state.currentSyllable.d = 0.5;
+        state.currentSyllable.lastReview = null;
+        state.currentSyllable.dueDate = null;
+    }
+    
+    // Fire an event to notify main.js to save
+    document.dispatchEvent(new CustomEvent('cardUpdated')); 
+
+    // Refresh the game by displaying the next card
+    // This mimics the behavior of deleting a card
+    displaySyllable();
 }

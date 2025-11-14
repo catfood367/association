@@ -52,6 +52,12 @@ export const dom = {
     customConfirmMessage: document.getElementById('customConfirmMessage'),
     customConfirmOkBtn: document.getElementById('customConfirmOkBtn'),
     customConfirmCancelBtn: document.getElementById('customConfirmCancelBtn'),
+    editCardModal: document.getElementById('editCardModal'),
+    editCardQuestionInput: document.getElementById('editCardQuestionInput'),
+    editCardAnswerInput: document.getElementById('editCardAnswerInput'),
+    editCardHintInput: document.getElementById('editCardHintInput'),
+    editCardCancelBtn: document.getElementById('editCardCancelBtn'),
+    editCardSaveBtn: document.getElementById('editCardSaveBtn'),
     generalSettingsBtn: document.getElementById('generalSettingsBtn'),
     generalSettingsModal: document.getElementById('generalSettingsModal'),
     generalCorrectSoundToggle: document.getElementById('generalCorrectSoundToggle'),
@@ -248,7 +254,8 @@ export function isModalOpen() {
            dom.congratsModal.style.display === 'flex' ||
            dom.generalSettingsModal.style.display === 'flex' ||
            dom.customAlertModal.style.display === 'flex' ||
-           dom.customConfirmModal.style.display === 'flex';
+           dom.customConfirmModal.style.display === 'flex' ||
+           dom.editCardModal.style.display === 'flex';
 }
 
 function setupModal(modalElement, onOutsideClick) {
@@ -259,6 +266,14 @@ function setupModal(modalElement, onOutsideClick) {
             }
         });
     }
+}
+
+export function openEditCardModal(card) {
+    dom.editCardQuestionInput.value = card.question;
+    dom.editCardAnswerInput.value = card.answer;
+    dom.editCardHintInput.value = card.hint || '';
+    dom.editCardModal.style.display = 'flex';
+    dom.editCardQuestionInput.focus();
 }
 
 export function initModalCloseListeners() {
@@ -297,6 +312,10 @@ export function initModalCloseListeners() {
 
     setupModal(dom.customAlertModal, () => {
         dom.customAlertModal.style.display = 'none';
+    });
+
+    setupModal(dom.editCardModal, () => {
+        dom.editCardCancelBtn.click();
     });
 
     setupModal(dom.customConfirmModal, () => {

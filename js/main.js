@@ -64,6 +64,7 @@ function _initCustomModalListeners() {
 function _handleGlobalModalKeys(e) {
     const isConfirmOpen = dom.customConfirmModal.style.display === 'flex';
     const isAlertOpen = dom.customAlertModal.style.display === 'flex';
+    const isEditCardOpen = dom.editCardModal.style.display === 'flex';
 
     // Handle Enter key only for confirm/alert
     if (e.key === 'Enter') {
@@ -75,6 +76,11 @@ function _handleGlobalModalKeys(e) {
         if (isAlertOpen) {
             e.preventDefault();
             dom.customAlertCloseBtn.click();
+            return; // Handled
+        }
+        if (isEditCardOpen) {
+            e.preventDefault();
+            dom.editCardSaveBtn.click();
             return; // Handled
         }
         // Do not handle Enter for other modals
@@ -90,6 +96,10 @@ function _handleGlobalModalKeys(e) {
         }
         if (isAlertOpen) {
             dom.customAlertCloseBtn.click();
+            return;
+        }
+        if (dom.editCardModal.style.display === 'flex') {
+            dom.editCardCancelBtn.click();
             return;
         }
         if (dom.mergeModal.style.display === 'flex') {
@@ -302,6 +312,9 @@ function _handleKeyDown(e) {
     } else if (e.key === 'Alt') { // Bloco da exclusão rápida
         e.preventDefault();
         game.handleDeleteCurrentCardRequest();
+    } else if (e.key === 'Shift') { // ADD THIS BLOCK
+        e.preventDefault();
+        game.handleEditCurrentCardRequest();
     } else {
         _handleKeyLetter(key);
     }
@@ -311,6 +324,10 @@ function _initGameListeners() {
     document.addEventListener('keydown', _handleKeyDown);
     document.addEventListener('pronunciationSuccess', game.handleCorrectPronunciation);
     document.addEventListener('cardDeleted', () => {
+        deckManager.saveDecks();
+        deckManager.renderDeckModal();
+    });
+    document.addEventListener('cardUpdated', () => {
         deckManager.saveDecks();
         deckManager.renderDeckModal();
     });
@@ -328,6 +345,28 @@ function _initModalCloseResumeListeners() {
     });
 }
 
+function _initEditCardModalListeners() {
+    dom.editCardCancelBtn.addEventListener('click', () => {
+        dom.editCardModal.style.display = 'none';
+    });
+
+    dom.editCardSaveBtn.addEventListener('click', () => {
+        const newData = {
+            question: dom.editCardQuestionInput.value.trim().toLowerCase(),
+            answer: dom.editCardAnswerInput.value.trim().toLowerCase(),
+            hint: dom.editCardHintInput.value.trim()
+        };
+
+        if (!newData.question || !newData.answer) {
+            showCustomAlert("Pergunta e Resposta não podem estar vazios.");
+            return;
+        }
+
+        game.updateCurrentCard(newData);
+        dom.editCardModal.style.display = 'none';
+    });
+}
+
 function init() {
     _setupApp();
     _initCustomModalListeners();
@@ -336,6 +375,7 @@ function init() {
     _initGlobalSettingsListeners();
     _initDeckModalListeners();
     _initDeckSettingsListeners();
+    _initEditCardModalListeners();
     _initGameListeners();
     _initModalCloseResumeListeners();
     
