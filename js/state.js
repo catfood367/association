@@ -47,5 +47,8 @@ export const state = {
     importCache: { content: null, name: null },
 
     currentConfirmOnOk: null,
-    currentConfirmOnCancel: null
+    currentConfirmOnCancel: null,
+
+    isLevelSkipActive: false,
+    levelSkipInput: ''
 };

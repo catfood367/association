@@ -299,6 +299,25 @@ function _handleKeyEnter() {
 
 function _handleKeyDown(e) {
     if (isModalOpen()) return;
+    const canSkipLevel = !state.evaluativeModeEnabled;
+
+    if (canSkipLevel && e.key === '/') { // ANTERIORMENTE: isFreeMode
+        e.preventDefault();
+        if (!state.isLevelSkipActive) {
+            state.levelSkipInput = '';
+        }
+        state.isLevelSkipActive = true;
+        return; 
+    }
+
+    if (state.isLevelSkipActive && /^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        state.levelSkipInput += e.key;
+        // Opcional: mostrar o número em algum lugar
+        // console.log("Input de nível:", state.levelSkipInput);
+        return; // Para a execução
+    }
+
     if (!state.currentSyllable || !state.currentSyllable.answer) return;
 
     const key = e.key.toLowerCase();
@@ -320,8 +339,24 @@ function _handleKeyDown(e) {
     }
 }
 
+function _handleKeyUp(e) {
+    if (isModalOpen()) return;
+
+    if (e.key === '/') {
+        e.preventDefault();
+        if (state.isLevelSkipActive && state.levelSkipInput.length > 0) {
+            const targetLevel = parseInt(state.levelSkipInput, 10);
+            game.jumpToLevel(targetLevel);
+        }
+        // Reseta o estado do pulo
+        state.isLevelSkipActive = false;
+        state.levelSkipInput = '';
+    }
+}
+
 function _initGameListeners() {
     document.addEventListener('keydown', _handleKeyDown);
+    document.addEventListener('keyup', _handleKeyUp);
     document.addEventListener('pronunciationSuccess', game.handleCorrectPronunciation);
     document.addEventListener('cardDeleted', () => {
         deckManager.saveDecks();

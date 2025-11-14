@@ -477,3 +477,35 @@ export function updateCurrentCard(newData) {
     // This mimics the behavior of deleting a card
     displaySyllable();
 }
+
+export function jumpToLevel(levelNumber) {
+    const totalLevels = Math.ceil(state.syllableList.length / GROUP_SIZE);
+    // Converte o nível (base 1) para o índice do grupo (base 0)
+    const targetIndex = levelNumber - 1; 
+
+    // Validação pedida: ignora se for 0, negativo ou maior que o total
+    if (targetIndex < 0 || targetIndex >= totalLevels) {
+        console.warn(`Pulo de nível inválido: ${levelNumber}. Máximo é ${totalLevels}.`);
+        state.isLevelSkipActive = false;
+        state.levelSkipInput = '';
+        return;
+    }
+
+    // Limpa a tela e para qualquer áudio/reconhecimento
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+    speech.stopRecognition();
+    if (state.currentSyllableElement) state.currentSyllableElement.remove();
+    if (state.translationElement) state.translationElement.remove();
+    dom.contextHintBox.style.display = 'none';
+
+    // Define o novo estado do jogo
+    state.currentGroupIndex = targetIndex;
+    // Atualiza o score para o início daquele nível
+    // (score = níveis completados * tamanho do grupo)
+    state.score = targetIndex * GROUP_SIZE; 
+
+    // Carrega o grupo e exibe a primeira sílaba
+    loadGroup(state.currentGroupIndex);
+    updateScoreDisplay();
+    displaySyllable();
+}
