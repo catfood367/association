@@ -10,7 +10,7 @@
 
 <div id="customAlertModal" class="modal">
     <div class="modal-content">
-        <h1 style="font-size: 1.5rem; color: var(--secondary); margin-bottom: 15px;" data-i18n="WARNING">Aviso</h1>
+        <h1 class="modal-title secondary" data-i18n="WARNING">Aviso</h1>
         <p id="customAlertMessage" data-i18n="THIS_IS_A_WARNING_MESSAGE">Esta é uma mensagem de alerta.</p>
         <div class="modal-actions">
             <button id="customAlertCloseBtn" class="btn btn-primary" data-i18n="OK">OK</button>
@@ -20,7 +20,7 @@
 
 <div id="customConfirmModal" class="modal">
     <div class="modal-content">
-        <h1 style="font-size: 1.5rem; color: var(--warning); margin-bottom: 15px;" data-i18n="CONFIRMATION">Confirmação</h1>
+        <h1 class="modal-title warning" data-i18n="CONFIRMATION">Confirmação</h1>
         <p id="customConfirmMessage" data-i18n="ARE_YOU_SURE">Você tem certeza?</p>
         <div class="modal-actions">
             <button id="customConfirmCancelBtn" class="btn btn-danger" data-i18n="CANCEL">Cancelar</button>
@@ -30,18 +30,18 @@
 </div>
 
 <div id="editCardModal" class="modal">
-    <div class="modal-content" style="width: 450px;">
-        <h1 style="font-size: 1.5rem; color: var(--secondary); margin-bottom: 15px;" data-i18n="EDIT_CARD">Editar Card</h1>
-        <label for="editCardQuestionInput" style="text-align: left; font-weight: bold; margin-bottom: 5px; display: block;" data-i18n="QUESTION">Pergunta:</label>
-        <input type="text" id="editCardQuestionInput" style="margin-bottom: 10px; width: 100%; box-sizing: border-box;">
+    <div class="modal-content">
+        <h1 class="modal-title secondary" data-i18n="EDIT_CARD">Editar Card</h1>
+        <label for="editCardQuestionInput" class="modal-label" data-i18n="QUESTION">Pergunta:</label>
+        <input type="text" id="editCardQuestionInput" class="modal-input">
         
-        <label for="editCardAnswerInput" style="text-align: left; font-weight: bold; margin-bottom: 5px; display: block;" data-i18n="ANSWER">Resposta:</label>
-        <input type="text" id="editCardAnswerInput" style="margin-bottom: 10px; width: 100%; box-sizing: border-box;">
+        <label for="editCardAnswerInput" class="modal-label" data-i18n="ANSWER">Resposta:</label>
+        <input type="text" id="editCardAnswerInput" class="modal-input">
         
-        <label for="editCardHintInput" style="text-align: left; font-weight: bold; margin-bottom: 5px; display: block;" data-i18n="HINT_CONTEXT">Dica (Contexto):</label>
-        <input type="text" id="editCardHintInput" style="margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+        <label for="editCardHintInput" class="modal-label" data-i18n="HINT_CONTEXT">Dica (Contexto):</label>
+        <input type="text" id="editCardHintInput" class="modal-input mb-20">
         
-        <div class="modal-actions" style="justify-content: space-between;">
+        <div class="modal-actions justify-between">
             <button id="editCardCancelBtn" class="btn btn-danger" data-i18n="CANCEL">Cancelar</button>
             <button id="editCardSaveBtn" class="btn btn-primary" data-i18n="SAVE">Salvar</button>
         </div>
@@ -85,9 +85,9 @@
 </div>
 
 <div id="generalSettingsModal" class="modal">
-    <div class="modal-content" style="width: 400px;">
+    <div class="modal-content">
         <h1 data-i18n="GENERAL_OPTIONS">Opções Gerais</h1>
-        <br>
+        
         <label>
             <span data-i18n="CORRECT_SOUND">Som de Acerto:</span>
             <input type="checkbox" id="generalCorrectSoundToggle" checked>
@@ -108,7 +108,7 @@
             <option value="pt-BR">Português</option>
         </select>
         
-        <div class="modal-actions" style="justify-content: space-between; margin-top: 25px;">
+        <div class="modal-actions justify-between mt-25">
             <button id="generalSettingsCancelBtn" class="btn btn-danger" data-i18n="CANCEL">Cancelar</button>
             <button id="generalSettingsSaveBtn" class="btn btn-primary" data-i18n="SAVE">Salvar</button>
         </div>
@@ -120,19 +120,19 @@
         <label for="deckNameInput" data-i18n="DECK_NAME">Nome do Deck</label>
         <input type="text" id="deckNameInput" placeholder="Ex: Vocabulário Português" data-i18n-placeholder="EXAMPLE_PORTUGUESE_VOCABULARY">
         
-        <label style="margin-top: 15px;">
+        <label class="form-group">
             <span data-i18n="READING_VOICE">Voz da leitura:</span>
             <select id="voiceSelect"></select>
         </label>
 
-        <div style="margin-top: 15px;">
+        <div class="form-group">
             <label>
                 <span data-i18n="DECK_CONTENT">Conteúdo do Deck:</span>
             </label>
-            <button id="editJsonBtn" class="btn btn-secondary" style="width: 100%; margin: 0;" data-i18n="EDIT_IMPORT_JSON">Editar/Importar JSON</button>
+            <button id="editJsonBtn" class="btn btn-secondary full-width" data-i18n="EDIT_IMPORT_JSON">Editar/Importar JSON</button>
         </div>
         
-        <hr style="border: 1px solid #555; margin: 20px 0;">
+        <hr>
 
         <fieldset id="gameModeSettings">
             <legend data-i18n="GAME_MODE">Modo de Jogo</legend>
@@ -152,9 +152,9 @@
             </div>
         </fieldset>
 
-        <br>
         
-        <div id="freeModeSettingsDiv" style="display: none;">
+        
+        <div id="freeModeSettingsDiv">
             <label>
                 <span data-i18n="LETTER_HINT">Dica de Letras:</span>
                 <span class="input-number-control">
@@ -181,7 +181,7 @@
             </label>
         </div>
 
-        <div id="settingsModalActions" class="modal-actions" style="justify-content: space-between; margin-top: 25px;">
+        <div id="settingsModalActions" class="modal-actions justify-between mt-25">
             <button id="settingsCancelBtn" class="btn btn-danger" data-i18n="CANCEL">Cancelar</button>
             <button id="settingsSaveBtn" class="btn btn-primary" data-i18n="SAVE">Salvar</button>
         </div>
@@ -203,10 +203,10 @@
 </div>
 
 <div id="mergeModal" class="modal">
-    <div class="modal-content" style="width: 600px !important;">
+    <div class="modal-content">
         <h2 data-i18n="IMPORT_JSON">Importar JSON</h2>
         <p data-i18n="MERGE_PROMPT">O editor já contém dados. Você quer mesclar o novo arquivo ou sobrescrever?</p>
-        <div class="modal-actions" style="margin-top: 20px !important;">
+        <div class="modal-actions mt-20">
             <button id="cancelMergeBtn" class="btn btn-danger" data-i18n="CANCEL">Cancelar</button>
             <div class="modal-actions-sub" >
                 <button id="overwriteBtn" class="btn btn-warning" data-i18n="OVERWRITE">Sobrescrever</button>
@@ -238,7 +238,7 @@
     <span id="contextHintText" data-i18n="EXAMPLE_CONTEXT_SENTENCE">Esta é uma frase de contexto de exemplo.</span>
 </div>
 
-<input type="file" id="fileInput" accept=".json" style="display:none;">
+<input type="file" id="fileInput" accept=".json" class="hidden">
 
 <script type="module" src="js/i18n/i18n.js"></script>
 <script type="module" src="js/main.js"></script>

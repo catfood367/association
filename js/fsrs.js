@@ -7,93 +7,55 @@ export function calculateRetention(card) {
     return Math.exp(-intervalDays / card.s);
 }
 
-function _getSimilarityGrade(similarity) {
-    if (similarity < 0.7) return 0;
-    if (similarity >= 0.7 && similarity < 1.0) return 1;
-    return -1;
-}
-
-function _getPerfectMatchGrade(reactionTime, typingTime) {
-    const r = reactionTime / 1000;
-    const t = typingTime / 1000;
-    const total = r + t;
-    const thinkingWhileTyping = t > r * 2 && t > 5;
-
-    if (r < 2 && !thinkingWhileTyping) return 3;
-    if (r < 4 && !thinkingWhileTyping) return 2;
-    if (r < 6 && !thinkingWhileTyping) return 1;
-    if (thinkingWhileTyping) return 0;
-    if (total > 10) return 0;
-
-    return 1;
-}
-
-export function calculateGrade(similarity, { reactionTime, typingTime }) {
-    const similarityGrade = _getSimilarityGrade(similarity);
-    if (similarityGrade !== -1) return similarityGrade;
-
-    if (similarity === 1) {
-        return _getPerfectMatchGrade(reactionTime, typingTime);
-    }
-    return 0;
-}
-
 function _calculateNewStability(s, d, grade, isNew) {
-    // Grau 0 (Again) - Penalidade forte
     if (grade === 0) {
         return Math.max(0.1, s * 0.4);
     }
 
-    // Se for um card NOVO, usamos intervalos fixos
     if (isNew) {
-        if (grade === 1) return 0.5; // Hard -> 0.5 dias
-        if (grade === 2) return 1.0; // Good -> 1 dia
-        if (grade === 3) return 2.0; // Easy -> 2 dias
+        if (grade === 1) return 0.5;
+        if (grade === 2) return 1.0;
+        if (grade === 3) return 2.0;
     }
 
-    // Se for um card em REVISÃO, usamos fatores
-    // baseados na dificuldade (d) e estabilidade (s)
     let factor;
     let easeBonus;
 
-    if (grade === 1) { // Hard
-        factor = 1.2 * (1 - d); // Fator baixo
-        easeBonus = 0; // Sem bônus
-        return Math.max(s * factor, s + 0.1); // Garante que cresça no mínimo 0.1
+    if (grade === 1) {
+        factor = 1.2 * (1 - d);
+        easeBonus = 0;
+        return Math.max(s * factor, s + 0.1);
     }
     
-    if (grade === 2) { // Good
-        factor = 1.5 * (1 - d); // Fator médio
-        easeBonus = 1; // Bônus de "Good"
+    if (grade === 2) {
+        factor = 1.5 * (1 - d);
+        easeBonus = 1;
         return (s + easeBonus) * factor;
     }
 
-    if (grade === 3) { // Easy
-        factor = 2.0 * (1 - d); // Fator alto
-        easeBonus = 2; // Bônus de "Easy"
+    if (grade === 3) {
+        factor = 2.0 * (1 - d);
+        easeBonus = 2;
         return (s + easeBonus) * factor;
     }
 
-    return s; // Segurança
+    return s;
 }
 
 function _calculateNewDifficulty(d, grade) {
-    // [Again, Hard, Good, Easy]
     const change = [0.1, 0.04, -0.06, -0.15][grade];
     return Math.max(0, Math.min(1, d + change));
 }
 
 function _calculateNewDueDate(s, grade) {
     if (grade === 0) {
-        // "Again" - agenda para daqui a 5 minutos (em vez de 2)
         return Date.now() + 5 * 60 * 1000;
     }
-    // Agenda para 's' dias a partir de agora
     return Date.now() + s * 24 * 60 * 60 * 1000;
 }
 
 export function updateFsrsData(card, grade) {
-    const isNew = !card.lastReview; // Verifica se o card é novo
+    const isNew = !card.lastReview;
     
     card.s = card.s ?? 0.1;
     card.d = card.d ?? 0.5;
@@ -101,7 +63,6 @@ export function updateFsrsData(card, grade) {
     const old_s = card.s;
     const old_d = card.d;
 
-    // Passa o status "isNew" para o cálculo de estabilidade
     card.s = _calculateNewStability(old_s, old_d, grade, isNew);
     card.d = _calculateNewDifficulty(old_d, grade);
     card.lastReview = Date.now();
@@ -196,25 +157,20 @@ export function calculatePerformanceGrade({ reactionTime, typingTime }) {
     const t = typingTime / 1000;
     const total = r + t;
 
-    // "Pensou enquanto digitava" - hesitação é "Hard"
     const thinkingWhileTyping = t > r * 2.5 && t > 4; 
-    // Muito lento no geral é "Hard"
     const verySlow = total > 10;
 
     if (verySlow || thinkingWhileTyping) {
-        return 1; // Hard
+        return 1;
     }
 
-    // Rápido e direto = Easy
     if (r < 2.5) {
-        return 3; // Easy
+        return 3;
     }
 
-    // Resposta normal = Good
     if (r < 6.0) {
-        return 2; // Good
+        return 2;
     }
 
-    // Reação lenta (mais de 6s) = Hard
-    return 1; // Hard
+    return 1;
 }

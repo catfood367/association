@@ -35,11 +35,6 @@ function _handleRecognitionResult(event) {
     let interimTranscript = '';
     let finalTranscript = '';
 
-    // *** A CORREÇÃO PRINCIPAL ***
-    // Em vez de 'i = 0', usamos 'i = event.resultIndex'.
-    // Isso garante que iteramos APENAS sobre os resultados
-    // da "fala" atual, e não sobre todo o histórico da sessão.
-    // Isso corrige o bug de "somar".
     for (let i = event.resultIndex; i < event.results.length; ++i) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
@@ -49,18 +44,14 @@ function _handleRecognitionResult(event) {
         }
     }
 
-    // Agora `displayTranscript` contém apenas a fala atual
     const displayTranscript = (finalTranscript + interimTranscript).trim();
     state.translationElement.textContent = displayTranscript;
 
-    // Checagem de sucesso (agora correta e sem acumular lixo)
     if (displayTranscript) {
         const success = samePronunciation(state.currentSyllable.question, displayTranscript);
         
         if (success) {
-            // Para o microfone IMEDIATAMENTE (isso vai disparar o 'onend')
             stopRecognition(); 
-            // Dispara o evento de sucesso
             document.dispatchEvent(new CustomEvent('pronunciationSuccess'));
         }
     }
@@ -73,17 +64,14 @@ function _handleRecognitionEnd() {
         return;
     }
 
-    // CORREÇÃO: Se paramos manualmente (por um acerto), NÃO reinicie.
     if (state.recognitionStoppedManually) {
-        state.recognitionStoppedManually = false; // Limpa a flag
-        return; // Sai sem reiniciar
+        state.recognitionStoppedManually = false;
+        return;
     }
 
-    // Se parou por outro motivo (timeout, erro, etc.), reinicie.
     const shouldRestart = state.pronunciationModeEnabled && 
                           state.currentSyllable;
     if (shouldRestart) {
-        // Reinicia o reconhecimento para o usuário tentar de novo
         setTimeout(startRecognition, 50);
     }
 }
@@ -110,9 +98,7 @@ export function initSpeechRecognition() {
     if (state.recognition) {
         try {
             state.recognition.abort();
-        } catch (e) {
-            console.log("Recognition aborted to change language.");
-        }
+        } catch (e) {}
         state.recognition.onresult = null;
         state.recognition.onend = null;
         state.recognition.onerror = null;

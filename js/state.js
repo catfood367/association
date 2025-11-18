@@ -53,6 +53,6 @@ export const state = {
     isLevelSkipActive: false,
     levelSkipInput: '',
 
-    levelScopeStart: 1, // <-- ADICIONADO
+    levelScopeStart: 1,
     levelScopeEnd: 1
 };

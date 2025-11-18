@@ -1,11 +1,9 @@
-// [main.js]
 import { state, LAST_OPENED_DECK_ID } from './state.js';
 import { dom, showCustomAlert, showCustomConfirm, loadGlobalSettings, saveGlobalSettings, renderDeckModal, initModalCloseListeners, updateModeSettingsVisibility, isModalOpen } from './ui.js';
 import * as game from './game.js';
 import * as speech from './speech.js';
 import * as deckManager from './deckManager.js';
-import * as fsrs from './fsrs.js';
-import { setLanguage, getLanguage } from './i18n/i18n.js';
+import { getLanguage } from './i18n/i18n.js';
 
 function _setupApp() {
     speech.populateVoices();
@@ -19,22 +17,13 @@ function _setupApp() {
 
 function _loadLastDeck() {
     const lastDeckId = localStorage.getItem(LAST_OPENED_DECK_ID);
-    if (!lastDeckId) {
-        dom.deckModal.style.display = 'flex';
-        return;
-    }
-    
     const lastDeck = state.allDecks.find(d => d.id === lastDeckId);
-    if (!lastDeck) {
+
+    if (!lastDeckId || !lastDeck || !lastDeck.content || lastDeck.content.length === 0) {
         dom.deckModal.style.display = 'flex';
         return;
     }
-    
-    if (!lastDeck.content || lastDeck.content.length === 0) {
-        dom.deckModal.style.display = 'flex';
-        return;
-    }
-    
+
     lastDeck.settings.evaluativeModeEnabled = false;
     lastDeck.settings.pronunciationModeEnabled = false;
     deckManager.saveDecks();
@@ -61,33 +50,29 @@ function _initCustomModalListeners() {
     });
 }
 
-// NOVA FUNÇÃO PARA TRATAR TECLAS GLOBAIS DE MODAIS
 function _handleGlobalModalKeys(e) {
     const isConfirmOpen = dom.customConfirmModal.style.display === 'flex';
     const isAlertOpen = dom.customAlertModal.style.display === 'flex';
     const isEditCardOpen = dom.editCardModal.style.display === 'flex';
 
-    // Handle Enter key only for confirm/alert
     if (e.key === 'Enter') {
         if (isConfirmOpen) {
             e.preventDefault();
             dom.customConfirmOkBtn.click();
-            return; // Handled
+            return;
         }
         if (isAlertOpen) {
             e.preventDefault();
             dom.customAlertCloseBtn.click();
-            return; // Handled
+            return;
         }
         if (isEditCardOpen) {
             e.preventDefault();
             dom.editCardSaveBtn.click();
-            return; // Handled
+            return;
         }
-        // Do not handle Enter for other modals
     }
 
-    // Handle Escape key for all modals in order of priority
     if (e.key === 'Escape') {
         e.preventDefault();
         
@@ -134,22 +119,21 @@ function _handleGlobalModalKeys(e) {
         }
     }
 }
-// FIM DA NOVA FUNÇÃO
 
 function _initVoiceListeners() {
     speechSynthesis.onvoiceschanged = speech.populateVoices;
     dom.voiceSelect.addEventListener('change', () => {
-    speech.selectVoice();
+        speech.selectVoice();
 
-    const isVoiceSelected = dom.voiceSelect.value !== 'none';
-    dom.modePronunciationToggle.disabled = !isVoiceSelected;
-    
-    if (!isVoiceSelected) {
-        dom.modePronunciationToggle.checked = false;
-        dom.modeFreeToggle.checked = !dom.modeFsrsToggle.checked;
-        updateModeSettingsVisibility(); 
-    }
-});
+        const isVoiceSelected = dom.voiceSelect.value !== 'none';
+        dom.modePronunciationToggle.disabled = !isVoiceSelected;
+
+        if (!isVoiceSelected) {
+            dom.modePronunciationToggle.checked = false;
+            dom.modeFreeToggle.checked = !dom.modeFsrsToggle.checked;
+            updateModeSettingsVisibility();
+        }
+    });
 }
 
 function _initTopPanelListeners() {
@@ -294,32 +278,23 @@ function _handleKeyEnter() {
 }
 
 function _handleKeyPress(e) {
-    // Se um modal estiver aberto, não faça nada.
     if (isModalOpen()) return;
-    // Se estamos em modo pronúncia, não aceite digitação.
     if (state.pronunciationModeEnabled) return;
-    // Se não houver um card ativo, não faça nada.
     if (!state.currentSyllable || !state.currentSyllable.answer) return;
 
-    // O evento 'keypress' já ignora a maioria das teclas de controle
-    // e o 'e.key' aqui VAI conter o caractere composto (ex: "á", "ç", "1", "?").
-    
-    // Ignora Enter e Backspace que são tratados no keydown
     if (e.key === 'Enter' || e.key === 'Backspace') {
         return;
     }
 
-    // Envia o caractere (agora com acento e minúsculo) para o jogo.
     game.handleKeyInput(e.key.toLowerCase());
 }
 
 function _handleKeyDown(e) {
     if (isModalOpen()) return;
 
-    // Lógica de pular nível (sem alteração)
     const canScopeLevel = !state.evaluativeModeEnabled;
-    if (canScopeLevel && e.key === 'ArrowUp') { // <-- ALTERADO
-        e.preventDefault(); // Impede a página de fazer scroll
+    if (canScopeLevel && e.key === 'ArrowUp') {
+        e.preventDefault();
         if (!state.isLevelSkipActive) {
             state.levelSkipInput = '';
         }
@@ -331,12 +306,8 @@ function _handleKeyDown(e) {
         state.levelSkipInput += e.key;
         return;
     }
-    // Fim da lógica de pular nível
 
     if (!state.currentSyllable || !state.currentSyllable.answer) return;
-
-    // --- ALTERAÇÃO AQUI ---
-    // Apenas teclas de controle são tratadas aqui
 
     if (e.key === 'Backspace') {
         game.handleBackspace();
@@ -344,16 +315,13 @@ function _handleKeyDown(e) {
         game.handleVoiceRepeat();
     } else if (e.key === 'Enter') {
         _handleKeyEnter();
-    } else if (e.key === 'F1') { // Bloco da exclusão rápida
+    } else if (e.key === 'F1') {
         e.preventDefault();
         game.handleDeleteCurrentCardRequest();
-    } else if (e.key === 'Alt') { // ADD THIS BLOCK
+    } else if (e.key === 'Alt') {
         e.preventDefault();
         game.handleEditCurrentCardRequest();
     }
-    
-    // O 'else' que chamava _handleKeyLetter foi REMOVIDO.
-    // A digitação de caracteres agora é tratada por _handleKeyPress.
 }
 
 function _handleKeyUp(e) {
@@ -364,7 +332,6 @@ function _handleKeyUp(e) {
         if (state.isLevelSkipActive && state.levelSkipInput.length > 0) {
             game.setGameScope(state.levelSkipInput);
         }
-        // Reseta o estado do pulo
         state.isLevelSkipActive = false;
         state.levelSkipInput = '';
     }
@@ -372,10 +339,7 @@ function _handleKeyUp(e) {
 function _initGameListeners() {
     document.addEventListener('keydown', _handleKeyDown);
     document.addEventListener('keyup', _handleKeyUp);
-
-    // --- ADICIONE ESTA LINHA ---
     document.addEventListener('keypress', _handleKeyPress);
-
     document.addEventListener('pronunciationSuccess', game.handleCorrectPronunciation);
     document.addEventListener('cardDeleted', () => {
         deckManager.saveDecks();
@@ -388,11 +352,9 @@ function _initGameListeners() {
 }
 function _initModalCloseResumeListeners() {
     document.addEventListener('deckModalClosed', () => {
-        // Se nenhum outro modal estiver aberto
         if (!isModalOpen()) {
-            // E estávamos no modo de pronúncia com uma sílaba ativa
             if (state.pronunciationModeEnabled && state.currentSyllable) {
-                speech.startRecognition(); // Reinicia o microfone
+                speech.startRecognition();
             }
         }
     });
@@ -432,7 +394,6 @@ function init() {
     _initGameListeners();
     _initModalCloseResumeListeners();
     
-    // ADICIONAR ESTE OUVINTE GLOBAL PARA CONTROLE DE TECLAS DE MODAIS
     document.addEventListener('keydown', _handleGlobalModalKeys);
     
     _loadLastDeck();

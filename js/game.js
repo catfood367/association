@@ -73,9 +73,7 @@ function _showContextHint() {
 function _speakSyllable() {
     if (state.selectedVoice && state.utterance) {
         state.utterance.text = state.currentSyllable.question;
-        if (speechSynthesis.speaking) {
-            speechSynthesis.cancel();
-        }
+        if (speechSynthesis.speaking) speechSynthesis.cancel();
         speechSynthesis.speak(state.utterance);
     }
 }
@@ -156,15 +154,13 @@ export function displaySyllable() {
     _appendSyllableToDom(syllableEl, translationEl);
 
     if (state.pronunciationModeEnabled) {
-        // Clear any pending callbacks from previous TTS plays
         if (state.utterance) {
             state.utterance.onend = null;
             state.utterance.onerror = null;
         }
-        // Don't auto-speak, just start recognition
         setTimeout(speech.startRecognition, 200);
     } else {
-        _speakSyllable(); // Auto-speak in FSRS/Free mode
+        _speakSyllable();
     }
 }
 
@@ -195,11 +191,9 @@ function _initializeDeckMode() {
 
 export function startGame() {
     if (!state.syllableList || state.syllableList.length === 0) {
-        // Se a lista *fatiada* estiver vazia (ex: escopo /99-100 em deck pequeno)
-        // Não inicia o jogo.
-        if (state.isLevelSkipActive) { // Evita loop se o deck estiver vazio
+        if (state.isLevelSkipActive) {
              showCustomAlert("Nenhum card encontrado para este escopo de nível.");
-             state.isLevelSkipActive = false; // Reseta para evitar loop
+             state.isLevelSkipActive = false;
              return;
         }
         return;
@@ -466,89 +460,68 @@ export function updateCurrentCard(newData) {
     const newQ = newData.question;
     const newA = newData.answer;
 
-    // Update the card object in place
-    state.currentSyllable.question = newQ;
+        state.currentSyllable.question = newQ;
     state.currentSyllable.answer = newA;
     state.currentSyllable.hint = newData.hint;
 
-    // If question or answer changed, reset FSRS stats
-    if (newQ !== oldQ || newA !== oldA) {
+        if (newQ !== oldQ || newA !== oldA) {
         state.currentSyllable.s = 0.1;
         state.currentSyllable.d = 0.5;
         state.currentSyllable.lastReview = null;
         state.currentSyllable.dueDate = null;
     }
     
-    // Fire an event to notify main.js to save
-    document.dispatchEvent(new CustomEvent('cardUpdated')); 
+        document.dispatchEvent(new CustomEvent('cardUpdated')); 
 
-    // Refresh the game by displaying the next card
-    // This mimics the behavior of deleting a card
     displaySyllable();
 }
 
 export function setGameScope(scopeInput) {
     const maxLevel = Math.ceil(state.originalSyllableList.length / GROUP_SIZE);
-    if (maxLevel === 0) return; // Deck original está vazio
+    if (maxLevel === 0) return;
 
     let startLevel, endLevel;
 
-    // Tenta dar parse em "X-Y"
     const parts = scopeInput.match(/^(\d+)-(\d+)$/);
     
     if (parts) {
-        // Formato "X-Y"
         startLevel = parseInt(parts[1], 10);
         endLevel = parseInt(parts[2], 10);
     } else if (/^\d+$/.test(scopeInput)) {
-        // Formato "X" (single number)
         startLevel = parseInt(scopeInput, 10);
-        // Conforme pedido: "até o numero maximo de levels"
         endLevel = maxLevel;
     } else {
-        // Input inválido (ex: "1-", "-5", "a-b")
         console.warn(`Escopo de nível inválido: ${scopeInput}`);
         return;
     }
 
-    // Validação e Correção de Limites
     if (isNaN(startLevel) || startLevel <= 0) startLevel = 1;
     if (isNaN(endLevel) || endLevel <= 0) endLevel = maxLevel;
     
-    // Garante que start não seja maior que end (ex: "5-3" vira "3-5")
     if (startLevel > endLevel) {
-        [startLevel, endLevel] = [endLevel, startLevel]; // Inverte
+        [startLevel, endLevel] = [endLevel, startLevel];
     }
     
-    // Garante que não passem do máximo
     if (startLevel > maxLevel) startLevel = maxLevel;
     if (endLevel > maxLevel) endLevel = maxLevel;
 
-    // --- A MÁGICA ---
-    // 1. Define o escopo no estado (para o placar)
     state.levelScopeStart = startLevel;
     state.levelScopeEnd = endLevel;
 
-    // 2. Calcula os índices do array (base 0)
     const startIndex = (startLevel - 1) * GROUP_SIZE;
-    const endIndex = endLevel * GROUP_SIZE; // slice() é exclusivo no final
+    const endIndex = endLevel * GROUP_SIZE;
 
-    // 3. Filtra a lista principal para a lista de jogo
     state.syllableList = state.originalSyllableList.slice(startIndex, endIndex);
 
-    // 4. Limpa a UI e reinicia o jogo com a nova lista
     if (speechSynthesis.speaking) speechSynthesis.cancel();
     speech.stopRecognition();
     if (state.currentSyllableElement) state.currentSyllableElement.remove();
     if (state.translationElement) state.translationElement.remove();
     dom.contextHintBox.style.display = 'none';
 
-    // Sinaliza que o pulo/escopo foi ativado para evitar loops
     state.isLevelSkipActive = true; 
     
-    // Reinicia o jogo com a lista fatiada
     startGame();
     
-    // Reseta o flag após o reinício
     setTimeout(() => { state.isLevelSkipActive = false; }, 100);
 }

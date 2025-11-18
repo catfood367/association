@@ -340,6 +340,83 @@ body.dark-mode {
     font-weight: bold;
     color: var(--secondary);
 }
+
+.modal-title {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.modal-title.secondary {
+    color: var(--secondary);
+}
+
+.modal-title.warning {
+    color: var(--warning);
+}
+
+#editCardModal .modal-content {
+    width: 450px;
+}
+
+#editCardModal .modal-label {
+    text-align: left;
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+#editCardModal .modal-input {
+    margin-bottom: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#editCardModal .mb-20 {
+    margin-bottom: 20px;
+}
+
+#generalSettingsModal .modal-content {
+    width: 400px;
+}
+
+.modal-actions.justify-between {
+    justify-content: space-between;
+}
+
+.modal-actions.mt-25 {
+    margin-top: 25px;
+}
+
+.modal-actions.mt-20 {
+    margin-top: 20px !important;
+}
+
+#settingsModal .form-group {
+    margin-top: 15px;
+}
+
+#editJsonBtn.full-width {
+    width: 100%;
+    margin: 0;
+}
+
+.modal-content hr {
+    border: 0;
+    border-top: 1px solid #555;
+    margin: 20px 0;
+}
+
+#mergeModal .modal-content {
+    width: 600px !important;
+}
+
+.hidden {
+    display: none;
+}
+
+#freeModeSettingsDiv {
+    display: none;
+}
 #statsModal .modal-actions {
     justify-content: space-between;
     margin-top: 25px;

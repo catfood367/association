@@ -167,23 +167,14 @@ function _getFreeModeScoreText() {
     const scoreLabel = getTranslation('SCORE');
     const levelLabel = getTranslation('LEVEL');
 
-    // Total de níveis NO ESCOPO ATUAL
     const totalLevelsInScope = Math.ceil(state.syllableList.length / GROUP_SIZE);
-    
-    // Nível atual DENTRO DO ESCOPO (base 1)
     const currentLevelInScope = state.currentGroupIndex + 1;
-    
-    // Total de níveis no deck ORIGINAL
     const maxOriginalLevel = Math.ceil(state.originalSyllableList.length / GROUP_SIZE);
-
-    // Se o escopo é o deck inteiro (o padrão)
     const isFullScope = (state.levelScopeStart === 1 && state.levelScopeEnd === maxOriginalLevel) || maxOriginalLevel === 0;
 
     if (isFullScope) {
-        // Comportamento antigo: "Level: 1 / 10"
         return `| ${scoreLabel}: ${state.score} | ${levelLabel}: ${currentLevelInScope} / ${totalLevelsInScope}`;
     } else {
-        // Novo comportamento: "Level 3-5 (1 / 3)"
         return `| ${scoreLabel}: ${state.score} | ${levelLabel}: ${state.levelScopeStart} / ${state.levelScopeEnd}`;
     }
 }
