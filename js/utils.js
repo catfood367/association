@@ -139,7 +139,7 @@ export function deduplicateCards(cards, showAlert) {
     });
     
     if (hasDuplicates) {
-        showAlert("Atenção: Cartões duplicados (Mesma Pergunta e Resposta) foram removidos");
+        showAlert(getTranslation('DUPLICATE_CARDS_REMOVED'));
     }
     return filtered;
 }

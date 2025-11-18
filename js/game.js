@@ -189,10 +189,14 @@ function _initializeDeckMode() {
     }
 }
 
+import { getLanguage } from './i18n/i18n.js';
+
+// ... (rest of the file)
+
 export function startGame() {
     if (!state.syllableList || state.syllableList.length === 0) {
         if (state.isLevelSkipActive) {
-             showCustomAlert("Nenhum card encontrado para este escopo de nível.");
+             showCustomAlert(getLanguage().NO_CARDS_FOR_LEVEL_SCOPE);
              state.isLevelSkipActive = false;
              return;
         }
@@ -374,7 +378,7 @@ function _handleFreeModeIncorrect() {
 
     if (state.restartOnWrongEnabled) {
         setTimeout(() => {
-            showCustomAlert("Você errou, Reiniciando jogo!");
+            showCustomAlert(getLanguage().WRONG_ANSWER_RESTART);
             startGame();
         }, 100);
     }
@@ -426,7 +430,7 @@ export function handleDeleteCurrentCardRequest() {
     if (!state.currentSyllable) return;
 
     const cardQuestion = state.currentSyllable.question;
-    const msg = `Tem certeza que quer remover o card "${cardQuestion}" permanentemente do deck?\n\nEsta ação não pode ser desfeita.`;
+    const msg = getLanguage().DELETE_CARD_CONFIRMATION.replace("{0}", cardQuestion);
     
     showCustomConfirm(msg, () => {
         if (_deleteCurrentCardLogic()) {
@@ -438,7 +442,7 @@ export function handleDeleteCurrentCardRequest() {
 
             displaySyllable();
         } else {
-            showCustomAlert("Erro: Não foi possível encontrar ou remover o card.");
+            showCustomAlert(getLanguage().ERROR_CARD_NOT_FOUND);
         }
     });
 }
@@ -491,7 +495,7 @@ export function setGameScope(scopeInput) {
         startLevel = parseInt(scopeInput, 10);
         endLevel = maxLevel;
     } else {
-        console.warn(`Escopo de nível inválido: ${scopeInput}`);
+        console.warn(`Invalid level scope: ${scopeInput}`);
         return;
     }
 

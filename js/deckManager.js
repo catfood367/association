@@ -58,7 +58,7 @@ export function selectDeck(deckId) {
     if (!selectedDeck) return;
     
     if (!selectedDeck.content || selectedDeck.content.length === 0) {
-        showCustomAlert('Deck sem conteúdo. Edite o deck para adicionar um.');
+        showCustomAlert(getTranslation('DECK_NO_CONTENT'));
         return;
     }
     
@@ -80,7 +80,7 @@ export function selectDeck(deckId) {
 }
 
 function _updateStatsUI(stats, deckName) {
-    dom.statsDeckName.textContent = `Estatísticas: ${deckName}`;
+    dom.statsDeckName.textContent = `${getTranslation('STATISTICS')}: ${deckName}`;
     dom.statsTotal.textContent = stats.total;
     dom.statsNew.textContent = stats.newCount;
     dom.statsLearning.textContent = stats.learningCount;
@@ -121,7 +121,7 @@ export function deleteDeck(deckId) {
     const deck = state.allDecks.find(d => d.id === deckId);
     if (!deck) return;
     
-    showCustomConfirm(`Tem certeza que quer deletar o deck "${deck.name}"?`, () => {
+    showCustomConfirm(getTranslation('DELETE_DECK_CONFIRMATION').replace("{0}", deck.name), () => {
         _removeDeckFromState(deckId);
         _resetCurrentDeck(deckId);
     });
@@ -201,7 +201,7 @@ function _openEditModal(deck) {
     dom.deckNameInput.value = deck.name;
     state.pendingDeckContent = deck.content ? JSON.stringify(deck.content) : null;
     applySettingsToModalUI(deck.settings);
-    dom.settingsSaveBtn.textContent = 'Salvar Alterações';
+    dom.settingsSaveBtn.textContent = getTranslation('SAVE_CHANGES');
 }
 
 function _openCreateModal() {
@@ -209,7 +209,7 @@ function _openCreateModal() {
     dom.deckNameInput.value = '';
     state.pendingDeckContent = null;
     applySettingsToModalUI(getDefaultSettings());
-    dom.settingsSaveBtn.textContent = 'Criar Deck';
+    dom.settingsSaveBtn.textContent = getTranslation('CREATE_DECK');
 }
 
 export function openSettingsModal(deckId = null) {
@@ -224,7 +224,7 @@ export function openSettingsModal(deckId = null) {
 
 function _validateDeckName(deckName) {
     if (!deckName) {
-        showCustomAlert('Por favor, dê um nome ao deck.');
+        showCustomAlert(getTranslation('DECK_MISSING_NAME'));
         return false;
     }
     return true;
@@ -233,10 +233,10 @@ function _validateDeckName(deckName) {
 function _parsePendingContent() {
     try {
         const content = state.pendingDeckContent ? JSON.parse(state.pendingDeckContent) : [];
-        if (!Array.isArray(content)) throw new Error('Conteúdo JSON inválido.');
+        if (!Array.isArray(content)) throw new Error(getTranslation('INVALID_JSON_FORMAT_ERROR').replace("\n\nError: ", ""));
         return content;
     } catch (e) {
-        showCustomAlert("Erro ao salvar: Conteúdo JSON parece ser inválido.");
+        showCustomAlert(getTranslation('ERROR_SAVING_INVALID_JSON'));
         return null;
     }
 }
@@ -283,7 +283,7 @@ function _updateExistingDeck(deck, deckName, settings, newContentBase) {
 
 function _createNewDeck(deckName, settings, newContentBase) {
     if (newContentBase.length === 0) {
-        showCustomAlert('Por favor, adicione conteúdo JSON ao deck usando o botão "Editar/Importar JSON".');
+        showCustomAlert(getTranslation('DECK_MISSING_JSON_CONTENT'));
         return false;
     }
     
@@ -353,7 +353,7 @@ function saveJsonChanges() {
     try {
         const data = JSON.parse(content);
         if (!Array.isArray(data)) {
-            throw new Error('O JSON principal deve ser um array `[]`.');
+            throw new Error(getTranslation('INVALID_JSON_FORMAT_ERROR').replace("\n\nError: ", ""));
         }
         
         const cleanedData = utils.cleanJsonContent(data);
@@ -362,7 +362,7 @@ function saveJsonChanges() {
         return true;
     } catch (e) {
         dom.jsonEditorTextarea.classList.add('invalid');
-        showCustomAlert('JSON inválido! Verifique o formato.\n\nErro: ' + e.message);
+        showCustomAlert(getTranslation('INVALID_JSON_FORMAT_ERROR') + e.message);
         return false;
     }
 }
@@ -431,10 +431,10 @@ function _handleMergeClick() {
     try {
         const existingContent = dom.jsonEditorTextarea.value.trim();
         const existingArray = (existingContent && existingContent !== "[]" && existingContent !== "") ? JSON.parse(existingContent) : [];
-        if (!Array.isArray(existingArray)) throw new Error('O conteúdo existente no editor não é um array JSON válido.');
+        if (!Array.isArray(existingArray)) throw new Error(getTranslation('INVALID_JSON_FORMAT_ERROR').replace("\n\nError: ", ""));
 
         const newArray = JSON.parse(state.importCache.content);
-        if (!Array.isArray(newArray)) throw new Error('O arquivo importado não é um array JSON válido.');
+        if (!Array.isArray(newArray)) throw new Error(getTranslation('INVALID_JSON_FORMAT_ERROR').replace("\n\nError: ", ""));
 
         const mergedArray = [...existingArray, ...newArray];
         const cleanedAndMerged = utils.cleanJsonContent(mergedArray); 
@@ -442,7 +442,7 @@ function _handleMergeClick() {
         dom.jsonEditorTextarea.value = utils.prettyPrintJson(JSON.stringify(cleanedAndMerged));
         _resetImportCache();
     } catch (e) {
-        showCustomAlert('Erro ao mesclar: Verifique se os dois JSONs são arrays válidos.\n\n' + e.message);
+        showCustomAlert(getTranslation('MERGE_ERROR') + e.message);
     }
 }
 

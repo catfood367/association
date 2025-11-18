@@ -1,10 +1,11 @@
 import { state } from './state.js';
 import { dom, showCustomAlert, isModalOpen } from './ui.js';
 import { samePronunciation } from './utils.js';
+import { getTranslation } from './i18n/i18n.js';
 
 export function populateVoices() {
     const voices = speechSynthesis.getVoices();
-    dom.voiceSelect.innerHTML = '<option value="none">Nenhuma</option>';
+    dom.voiceSelect.innerHTML = `<option value="none">${getTranslation('NONE')}</option>`;
     voices.forEach((voice, index) => {
         const opt = document.createElement('option');
         opt.value = index;
@@ -16,7 +17,7 @@ export function populateVoices() {
 function _checkSpeechRecognitionSupport() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-        showCustomAlert('Speech Recognition API not supported');
+        showCustomAlert(getTranslation('SPEECH_API_NOT_SUPPORTED'));
         return null;
     }
     return SpeechRecognition;
@@ -85,7 +86,7 @@ function _handleRecognitionError(event) {
             const deck = state.allDecks.find(d => d.id === state.currentDeckId);
             if (deck) deck.settings.pronunciationModeEnabled = false;
         }
-        showCustomAlert('Permissão do microfone negada. O modo de pronúncia foi desativado.');
+        showCustomAlert(getTranslation('MIC_PERMISSION_DENIED'));
     }
 
     state.isRecognizing = false;

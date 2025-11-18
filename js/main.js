@@ -155,7 +155,7 @@ function _initTopPanelListeners() {
         if (state.currentDeckId) {
             deckManager.openSettingsModal(state.currentDeckId);
         } else {
-            showCustomAlert("Por favor, selecione um deck primeiro.");
+            showCustomAlert(getLanguage().SELECT_DECK_FIRST);
             dom.deckModal.style.display = 'flex';
         }
     });
@@ -212,7 +212,7 @@ function _initDeckModalListeners() {
         const deck = state.allDecks.find(d => d.id === state.currentDeckStatsId);
         if (!deck) return;
 
-        showCustomConfirm(`Tem certeza que quer resetar todas as estatísticas FSRS do deck "${deck.name}"?\n\nEsta ação não pode ser desfeita.`, () => {
+        showCustomConfirm(getLanguage().RESET_FSRS_CONFIRMATION.replace("{0}", deck.name), () => {
             deck.content.forEach(card => {
                 card.s = 0.1;
                 card.d = 0.5;
@@ -222,7 +222,7 @@ function _initDeckModalListeners() {
             deckManager.saveDecks();
             deckManager.showDeckStats(state.currentDeckStatsId);
             
-            showCustomAlert("Estatísticas FSRS resetadas.");
+            showCustomAlert(getLanguage().FSRS_STATS_RESET);
         });
     });
 }
@@ -373,7 +373,7 @@ function _initEditCardModalListeners() {
         };
 
         if (!newData.question || !newData.answer) {
-            showCustomAlert("Pergunta e Resposta não podem estar vazios.");
+            showCustomAlert(getLanguage().EMPTY_QUESTION_ANSWER);
             return;
         }
 
