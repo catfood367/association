@@ -13,11 +13,11 @@ import {
 import * as game from "./game.js";
 import * as speech from "./speech.js";
 import * as deckManager from "./deckManager.js";
-import { getLanguage } from "./i18n/i18n.js";
+import { getLanguage, getTranslation } from "./i18n/i18n.js";
 
-function _setupApp() {
+async function _setupApp() {
+  await loadGlobalSettings();
   speech.populateVoices();
-  loadGlobalSettings();
   deckManager.loadDecks();
   renderDeckModal();
   initModalCloseListeners();
@@ -170,7 +170,7 @@ function _initTopPanelListeners() {
     if (state.currentDeckId) {
       deckManager.openSettingsModal(state.currentDeckId);
     } else {
-      showCustomAlert(getLanguage().SELECT_DECK_FIRST);
+      showCustomAlert(getTranslation("SELECT_DECK_FIRST"));
       dom.deckModal.style.display = "flex";
     }
   });
@@ -228,7 +228,7 @@ function _initDeckModalListeners() {
     if (!deck) return;
 
     showCustomConfirm(
-      getLanguage().RESET_FSRS_CONFIRMATION.replace("{0}", deck.name),
+      getTranslation("RESET_FSRS_CONFIRMATION").replace("{0}", deck.name),
       () => {
         deck.content.forEach((card) => {
           card.s = 0.1;
@@ -239,7 +239,7 @@ function _initDeckModalListeners() {
         deckManager.saveDecks();
         deckManager.showDeckStats(state.currentDeckStatsId);
 
-        showCustomAlert(getLanguage().FSRS_STATS_RESET);
+        showCustomAlert(getTranslation(FSRS_STATS_RESET));
       },
     );
   });
@@ -406,7 +406,7 @@ function _initEditCardModalListeners() {
     };
 
     if (!newData.question || !newData.answer) {
-      showCustomAlert(getLanguage().EMPTY_QUESTION_ANSWER);
+      showCustomAlert(getTranslation("EMPTY_QUESTION_ANSWER"));
       return;
     }
 
@@ -415,8 +415,8 @@ function _initEditCardModalListeners() {
   });
 }
 
-function init() {
-  _setupApp();
+async function init() {
+  await _setupApp();
   _initCustomModalListeners();
   _initVoiceListeners();
   _initTopPanelListeners();

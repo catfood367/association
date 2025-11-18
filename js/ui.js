@@ -96,7 +96,7 @@ function _applyGlobalSettings(settings) {
   document.body.classList.toggle("dark-mode", state.darkModeEnabled);
 }
 
-export function saveGlobalSettings() {
+export async function saveGlobalSettings() {
   const settings = {
     correctSoundEnabled: dom.generalCorrectSoundToggle.checked,
     wrongSoundEnabled: dom.generalWrongSoundToggle.checked,
@@ -105,10 +105,10 @@ export function saveGlobalSettings() {
   };
   localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(settings));
   _applyGlobalSettings(settings);
-  setLanguage(settings.language);
+  await setLanguage(settings.language);
 }
 
-export function loadGlobalSettings() {
+export async function loadGlobalSettings() {
   const settingsJson = localStorage.getItem(GLOBAL_SETTINGS_KEY);
   const s = settingsJson
     ? JSON.parse(settingsJson)
@@ -125,7 +125,7 @@ export function loadGlobalSettings() {
   dom.languageSelector.value = s.language || "pt-BR";
 
   _applyGlobalSettings(s);
-  setLanguage(s.language || "pt-BR");
+  await setLanguage(s.language || "pt-BR");
 }
 
 function _createDeckCardElement(deck) {

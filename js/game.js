@@ -11,7 +11,7 @@ import {
   showCustomConfirm,
   openEditCardModal,
 } from "./ui.js";
-import { getLanguage } from "./i18n/i18n.js";
+import { getTranslation } from "./i18n/i18n.js";
 
 let lastPickedIndex = -1;
 
@@ -213,7 +213,7 @@ function _initializeDeckMode() {
 export function startGame() {
   if (!state.syllableList || state.syllableList.length === 0) {
     if (state.isLevelSkipActive) {
-      showCustomAlert(getLanguage().NO_CARDS_FOR_LEVEL_SCOPE);
+      showCustomAlert(getTranslation("NO_CARDS_FOR_LEVEL_SCOPE"));
       state.isLevelSkipActive = false;
       return;
     }
@@ -396,7 +396,7 @@ function _handleFreeModeIncorrect() {
 
   if (state.restartOnWrongEnabled) {
     setTimeout(() => {
-      showCustomAlert(getLanguage().WRONG_ANSWER_RESTART);
+      showCustomAlert(getTranslation("WRONG_ANSWER_RESTART"));
       startGame();
     }, 100);
   }
@@ -456,7 +456,7 @@ export function handleDeleteCurrentCardRequest() {
   if (!state.currentSyllable) return;
 
   const cardQuestion = state.currentSyllable.question;
-  const msg = getLanguage().DELETE_CARD_CONFIRMATION.replace(
+  const msg = getTranslation("DELETE_CARD_CONFIRMATION").replace(
     "{0}",
     cardQuestion,
   );
@@ -471,7 +471,7 @@ export function handleDeleteCurrentCardRequest() {
 
       displaySyllable();
     } else {
-      showCustomAlert(getLanguage().ERROR_CARD_NOT_FOUND);
+      showCustomAlert(getTranslation("ERROR_CARD_NOT_FOUND"));
     }
   });
 }
