@@ -4,6 +4,7 @@ import * as fsrs from './fsrs.js';
 import { dom, renderDeckModal, showCustomAlert, showCustomConfirm, updateModeSettingsVisibility } from './ui.js';
 import { startGame } from './game.js';
 import { selectVoice, stopRecognition } from './speech.js';
+import { getTranslation } from './i18n/i18n.js';
 
 export function loadDecks() {
     const decksJson = localStorage.getItem(DECK_STORAGE_KEY);
@@ -74,6 +75,7 @@ export function selectDeck(deckId) {
     applyDeckSettingsToGame(selectedDeck.settings, startGame);
     
     dom.currentDeckNameSpan.textContent = selectedDeck.name;
+    dom.currentDeckNameSpan.removeAttribute('data-i18n');
     dom.deckModal.style.display = 'none';
 }
 
@@ -105,7 +107,8 @@ function _removeDeckFromState(deckId) {
 function _resetCurrentDeck(deckId) {
     if (deckId === state.currentDeckId) {
         state.currentDeckId = null;
-        dom.currentDeckNameSpan.textContent = "Nenhum Deck";
+        dom.currentDeckNameSpan.setAttribute('data-i18n', 'NO_DECK');
+        dom.currentDeckNameSpan.textContent = getTranslation('NO_DECK');
         if (state.currentSyllableElement) state.currentSyllableElement.remove();
         dom.contextHintBox.style.display = 'none';
     }
