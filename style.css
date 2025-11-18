@@ -90,6 +90,7 @@ body.dark-mode {
     margin-left: 10px;
     box-sizing: border-box;
     text-align: center;
+    appearance: textfield;
     -moz-appearance: textfield;
 }
 .modal-content input[type=number]::-webkit-inner-spin-button, 
@@ -161,7 +162,8 @@ body.dark-mode {
 .btn-warning:hover { background: rgb(255, 203, 37); }
 .btn-close { background: var(--danger); }
 
-#voiceSelect {
+#voiceSelect,
+#languageSelector {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;

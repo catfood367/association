@@ -1,5 +1,6 @@
 import { state, GROUP_SIZE, GLOBAL_SETTINGS_KEY } from './state.js';
 import * as fsrs from './fsrs.js';
+import { setLanguage } from './i18n/i18n.js';
 
 export const dom = {
     scoreText: document.getElementById('scoreText'),
@@ -70,7 +71,8 @@ export const dom = {
     modePronunciationToggle: document.getElementById('modePronunciationToggle'),
     settingsModalActions: document.getElementById('settingsModalActions'),
     settingsCancelBtn: document.getElementById('settingsCancelBtn'),
-    settingsSaveBtn: document.getElementById('settingsSaveBtn')
+    settingsSaveBtn: document.getElementById('settingsSaveBtn'),
+    languageSelector: document.getElementById('languageSelector')
 };
 
 export function showCustomAlert(message) {
@@ -96,10 +98,12 @@ export function saveGlobalSettings() {
     const settings = {
         correctSoundEnabled: dom.generalCorrectSoundToggle.checked,
         wrongSoundEnabled: dom.generalWrongSoundToggle.checked,
-        darkModeEnabled: dom.generalDarkModeToggle.checked
+        darkModeEnabled: dom.generalDarkModeToggle.checked,
+        language: dom.languageSelector.value
     };
     localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(settings));
     _applyGlobalSettings(settings);
+    setLanguage(settings.language);
 }
 
 export function loadGlobalSettings() {
@@ -107,14 +111,17 @@ export function loadGlobalSettings() {
     const s = settingsJson ? JSON.parse(settingsJson) : {
         correctSoundEnabled: true,
         wrongSoundEnabled: true,
-        darkModeEnabled: false
+        darkModeEnabled: false,
+        language: 'pt-BR'
     };
     
     dom.generalCorrectSoundToggle.checked = s.correctSoundEnabled;
     dom.generalWrongSoundToggle.checked = s.wrongSoundEnabled;
     dom.generalDarkModeToggle.checked = s.darkModeEnabled;
+    dom.languageSelector.value = s.language || 'pt-BR';
 
     _applyGlobalSettings(s);
+    setLanguage(s.language || 'pt-BR');
 }
 
 function _createDeckCardElement(deck) {

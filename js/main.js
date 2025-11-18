@@ -5,6 +5,7 @@ import * as game from './game.js';
 import * as speech from './speech.js';
 import * as deckManager from './deckManager.js';
 import * as fsrs from './fsrs.js';
+import { setLanguage, getLanguage } from './i18n/i18n.js';
 
 function _setupApp() {
     speech.populateVoices();
@@ -156,6 +157,7 @@ function _initTopPanelListeners() {
         dom.generalCorrectSoundToggle.checked = state.correctSoundEnabled;
         dom.generalWrongSoundToggle.checked = state.wrongSoundEnabled;
         dom.generalDarkModeToggle.checked = state.darkModeEnabled;
+        dom.languageSelector.value = getLanguage();
         dom.generalSettingsModal.style.display = 'flex';
     });
 
