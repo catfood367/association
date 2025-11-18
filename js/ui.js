@@ -171,7 +171,7 @@ function _getFreeModeScoreText() {
         return `| Pontuação: ${state.score} | Level: ${currentLevelInScope} / ${totalLevelsInScope}`;
     } else {
         // Novo comportamento: "Level 3-5 (1 / 3)"
-        return `| Pontuação: ${state.score} | Level ${state.levelScopeStart}-${state.levelScopeEnd}`;
+        return `| Pontuação: ${state.score} | Level: ${state.levelScopeStart} / ${state.levelScopeEnd}`;
     }
 }
 
