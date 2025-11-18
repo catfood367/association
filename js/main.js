@@ -280,12 +280,6 @@ function _initDeckSettingsListeners() {
     }));
 }
 
-function _handleKeyLetter(key) {
-    if (/^[a-z ']$/.test(key) && key.length === 1) {
-        game.handleKeyInput(key);
-    }
-}
-
 function _handleKeyEnter() {
     if (state.pronunciationModeEnabled) {
         game.handlePronunciationEnter();
@@ -297,32 +291,50 @@ function _handleKeyEnter() {
     }
 }
 
+function _handleKeyPress(e) {
+    // Se um modal estiver aberto, não faça nada.
+    if (isModalOpen()) return;
+    // Se estamos em modo pronúncia, não aceite digitação.
+    if (state.pronunciationModeEnabled) return;
+    // Se não houver um card ativo, não faça nada.
+    if (!state.currentSyllable || !state.currentSyllable.answer) return;
+
+    // O evento 'keypress' já ignora a maioria das teclas de controle
+    // e o 'e.key' aqui VAI conter o caractere composto (ex: "á", "ç", "1", "?").
+    
+    // Ignora Enter e Backspace que são tratados no keydown
+    if (e.key === 'Enter' || e.key === 'Backspace') {
+        return;
+    }
+
+    // Envia o caractere (agora com acento e minúsculo) para o jogo.
+    game.handleKeyInput(e.key.toLowerCase());
+}
+
 function _handleKeyDown(e) {
     if (isModalOpen()) return;
 
-    // Renomeado para clareza
-    // Funciona em Modo Livre e Pronúncia, mas não FSRS
-    const canScopeLevel = !state.evaluativeModeEnabled; 
-
-    if (canScopeLevel && e.key === '/') { // <-- ALTERADO
-        e.preventDefault();
+    // Lógica de pular nível (sem alteração)
+    const canScopeLevel = !state.evaluativeModeEnabled;
+    if (canScopeLevel && e.key === 'ArrowUp') { // <-- ALTERADO
+        e.preventDefault(); // Impede a página de fazer scroll
         if (!state.isLevelSkipActive) {
             state.levelSkipInput = '';
         }
         state.isLevelSkipActive = true;
-        return; 
+        return;
     }
-
-    // Permite números E o hífen
-    if (state.isLevelSkipActive && /^[0-9-]$/.test(e.key)) { // <-- ALTERADO
+    if (state.isLevelSkipActive && /^[0-9-]$/.test(e.key)) {
         e.preventDefault();
         state.levelSkipInput += e.key;
         return;
     }
+    // Fim da lógica de pular nível
 
     if (!state.currentSyllable || !state.currentSyllable.answer) return;
 
-    const key = e.key.toLowerCase();
+    // --- ALTERAÇÃO AQUI ---
+    // Apenas teclas de controle são tratadas aqui
 
     if (e.key === 'Backspace') {
         game.handleBackspace();
@@ -330,35 +342,38 @@ function _handleKeyDown(e) {
         game.handleVoiceRepeat();
     } else if (e.key === 'Enter') {
         _handleKeyEnter();
-    } else if (e.key === 'Alt') { // Bloco da exclusão rápida
+    } else if (e.key === 'F1') { // Bloco da exclusão rápida
         e.preventDefault();
         game.handleDeleteCurrentCardRequest();
-    } else if (e.key === 'Shift') { // ADD THIS BLOCK
+    } else if (e.key === 'Alt') { // ADD THIS BLOCK
         e.preventDefault();
         game.handleEditCurrentCardRequest();
-    } else {
-        _handleKeyLetter(key);
     }
+    
+    // O 'else' que chamava _handleKeyLetter foi REMOVIDO.
+    // A digitação de caracteres agora é tratada por _handleKeyPress.
 }
 
 function _handleKeyUp(e) {
     if (isModalOpen()) return;
 
-    if (e.key === '/') {
+    if (e.key === 'ArrowUp') {
         e.preventDefault();
         if (state.isLevelSkipActive && state.levelSkipInput.length > 0) {
-            // Em vez de jumpToLevel, passamos o input ("1-5" ou "7")
-            game.setGameScope(state.levelSkipInput); // <-- ALTERADO
+            game.setGameScope(state.levelSkipInput);
         }
         // Reseta o estado do pulo
         state.isLevelSkipActive = false;
         state.levelSkipInput = '';
     }
 }
-
 function _initGameListeners() {
     document.addEventListener('keydown', _handleKeyDown);
     document.addEventListener('keyup', _handleKeyUp);
+
+    // --- ADICIONE ESTA LINHA ---
+    document.addEventListener('keypress', _handleKeyPress);
+
     document.addEventListener('pronunciationSuccess', game.handleCorrectPronunciation);
     document.addEventListener('cardDeleted', () => {
         deckManager.saveDecks();
@@ -369,7 +384,6 @@ function _initGameListeners() {
         deckManager.renderDeckModal();
     });
 }
-
 function _initModalCloseResumeListeners() {
     document.addEventListener('deckModalClosed', () => {
         // Se nenhum outro modal estiver aberto
