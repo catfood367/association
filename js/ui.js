@@ -1,6 +1,6 @@
 import { state, GROUP_SIZE, GLOBAL_SETTINGS_KEY } from './state.js';
 import * as fsrs from './fsrs.js';
-import { setLanguage } from './i18n/i18n.js';
+import { setLanguage, getTranslation } from './i18n/i18n.js';
 
 export const dom = {
     scoreText: document.getElementById('scoreText'),
@@ -157,10 +157,16 @@ export function updateModeSettingsVisibility() {
 }
 
 function _getFsrsScoreText(stats) {
-    return `| Pontuação: ${state.score} | Revisão: ${stats.dueCount + state.sessionReviewQueue.length} | Novas: ${stats.newCount}`;
+    const scoreLabel = getTranslation('SCORE');
+    const reviewLabel = getTranslation('REVIEW');
+    const newLabel = getTranslation('NEW');
+    return `| ${scoreLabel}: ${state.score} | ${reviewLabel}: ${stats.dueCount + state.sessionReviewQueue.length} | ${newLabel}: ${stats.newCount}`;
 }
 
 function _getFreeModeScoreText() {
+    const scoreLabel = getTranslation('SCORE');
+    const levelLabel = getTranslation('LEVEL');
+
     // Total de níveis NO ESCOPO ATUAL
     const totalLevelsInScope = Math.ceil(state.syllableList.length / GROUP_SIZE);
     
@@ -175,10 +181,10 @@ function _getFreeModeScoreText() {
 
     if (isFullScope) {
         // Comportamento antigo: "Level: 1 / 10"
-        return `| Pontuação: ${state.score} | Level: ${currentLevelInScope} / ${totalLevelsInScope}`;
+        return `| ${scoreLabel}: ${state.score} | ${levelLabel}: ${currentLevelInScope} / ${totalLevelsInScope}`;
     } else {
         // Novo comportamento: "Level 3-5 (1 / 3)"
-        return `| Pontuação: ${state.score} | Level: ${state.levelScopeStart} / ${state.levelScopeEnd}`;
+        return `| ${scoreLabel}: ${state.score} | ${levelLabel}: ${state.levelScopeStart} / ${state.levelScopeEnd}`;
     }
 }
 
