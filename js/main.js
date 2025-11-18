@@ -299,9 +299,12 @@ function _handleKeyEnter() {
 
 function _handleKeyDown(e) {
     if (isModalOpen()) return;
-    const canSkipLevel = !state.evaluativeModeEnabled;
 
-    if (canSkipLevel && e.key === '/') { // ANTERIORMENTE: isFreeMode
+    // Renomeado para clareza
+    // Funciona em Modo Livre e Pronúncia, mas não FSRS
+    const canScopeLevel = !state.evaluativeModeEnabled; 
+
+    if (canScopeLevel && e.key === '/') { // <-- ALTERADO
         e.preventDefault();
         if (!state.isLevelSkipActive) {
             state.levelSkipInput = '';
@@ -310,12 +313,11 @@ function _handleKeyDown(e) {
         return; 
     }
 
-    if (state.isLevelSkipActive && /^[0-9]$/.test(e.key)) {
+    // Permite números E o hífen
+    if (state.isLevelSkipActive && /^[0-9-]$/.test(e.key)) { // <-- ALTERADO
         e.preventDefault();
         state.levelSkipInput += e.key;
-        // Opcional: mostrar o número em algum lugar
-        // console.log("Input de nível:", state.levelSkipInput);
-        return; // Para a execução
+        return;
     }
 
     if (!state.currentSyllable || !state.currentSyllable.answer) return;
@@ -345,8 +347,8 @@ function _handleKeyUp(e) {
     if (e.key === '/') {
         e.preventDefault();
         if (state.isLevelSkipActive && state.levelSkipInput.length > 0) {
-            const targetLevel = parseInt(state.levelSkipInput, 10);
-            game.jumpToLevel(targetLevel);
+            // Em vez de jumpToLevel, passamos o input ("1-5" ou "7")
+            game.setGameScope(state.levelSkipInput); // <-- ALTERADO
         }
         // Reseta o estado do pulo
         state.isLevelSkipActive = false;

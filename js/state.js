@@ -10,6 +10,7 @@ export const state = {
     allDecks: [],
     currentDeckId: null,
     currentDeckStatsId: null,
+    originalSyllableList: [],
     syllableList: [],
     currentGroupIndex: 0,
     currentGroup: [],
@@ -50,5 +51,8 @@ export const state = {
     currentConfirmOnCancel: null,
 
     isLevelSkipActive: false,
-    levelSkipInput: ''
+    levelSkipInput: '',
+
+    levelScopeStart: 1, // <-- ADICIONADO
+    levelScopeEnd: 1
 };

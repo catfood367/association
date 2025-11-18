@@ -194,7 +194,16 @@ function _initializeDeckMode() {
 }
 
 export function startGame() {
-    if (!state.syllableList || state.syllableList.length === 0) return;
+    if (!state.syllableList || state.syllableList.length === 0) {
+        // Se a lista *fatiada* estiver vazia (ex: escopo /99-100 em deck pequeno)
+        // Não inicia o jogo.
+        if (state.isLevelSkipActive) { // Evita loop se o deck estiver vazio
+             showCustomAlert("Nenhum card encontrado para este escopo de nível.");
+             state.isLevelSkipActive = false; // Reseta para evitar loop
+             return;
+        }
+        return;
+    }
 
     speech.selectVoice();
     _cleanupGameUI();
@@ -478,34 +487,68 @@ export function updateCurrentCard(newData) {
     displaySyllable();
 }
 
-export function jumpToLevel(levelNumber) {
-    const totalLevels = Math.ceil(state.syllableList.length / GROUP_SIZE);
-    // Converte o nível (base 1) para o índice do grupo (base 0)
-    const targetIndex = levelNumber - 1; 
+export function setGameScope(scopeInput) {
+    const maxLevel = Math.ceil(state.originalSyllableList.length / GROUP_SIZE);
+    if (maxLevel === 0) return; // Deck original está vazio
 
-    // Validação pedida: ignora se for 0, negativo ou maior que o total
-    if (targetIndex < 0 || targetIndex >= totalLevels) {
-        console.warn(`Pulo de nível inválido: ${levelNumber}. Máximo é ${totalLevels}.`);
-        state.isLevelSkipActive = false;
-        state.levelSkipInput = '';
+    let startLevel, endLevel;
+
+    // Tenta dar parse em "X-Y"
+    const parts = scopeInput.match(/^(\d+)-(\d+)$/);
+    
+    if (parts) {
+        // Formato "X-Y"
+        startLevel = parseInt(parts[1], 10);
+        endLevel = parseInt(parts[2], 10);
+    } else if (/^\d+$/.test(scopeInput)) {
+        // Formato "X" (single number)
+        startLevel = parseInt(scopeInput, 10);
+        // Conforme pedido: "até o numero maximo de levels"
+        endLevel = maxLevel;
+    } else {
+        // Input inválido (ex: "1-", "-5", "a-b")
+        console.warn(`Escopo de nível inválido: ${scopeInput}`);
         return;
     }
 
-    // Limpa a tela e para qualquer áudio/reconhecimento
+    // Validação e Correção de Limites
+    if (isNaN(startLevel) || startLevel <= 0) startLevel = 1;
+    if (isNaN(endLevel) || endLevel <= 0) endLevel = maxLevel;
+    
+    // Garante que start não seja maior que end (ex: "5-3" vira "3-5")
+    if (startLevel > endLevel) {
+        [startLevel, endLevel] = [endLevel, startLevel]; // Inverte
+    }
+    
+    // Garante que não passem do máximo
+    if (startLevel > maxLevel) startLevel = maxLevel;
+    if (endLevel > maxLevel) endLevel = maxLevel;
+
+    // --- A MÁGICA ---
+    // 1. Define o escopo no estado (para o placar)
+    state.levelScopeStart = startLevel;
+    state.levelScopeEnd = endLevel;
+
+    // 2. Calcula os índices do array (base 0)
+    const startIndex = (startLevel - 1) * GROUP_SIZE;
+    const endIndex = endLevel * GROUP_SIZE; // slice() é exclusivo no final
+
+    // 3. Filtra a lista principal para a lista de jogo
+    state.syllableList = state.originalSyllableList.slice(startIndex, endIndex);
+
+    // 4. Limpa a UI e reinicia o jogo com a nova lista
     if (speechSynthesis.speaking) speechSynthesis.cancel();
     speech.stopRecognition();
     if (state.currentSyllableElement) state.currentSyllableElement.remove();
     if (state.translationElement) state.translationElement.remove();
     dom.contextHintBox.style.display = 'none';
 
-    // Define o novo estado do jogo
-    state.currentGroupIndex = targetIndex;
-    // Atualiza o score para o início daquele nível
-    // (score = níveis completados * tamanho do grupo)
-    state.score = targetIndex * GROUP_SIZE; 
-
-    // Carrega o grupo e exibe a primeira sílaba
-    loadGroup(state.currentGroupIndex);
-    updateScoreDisplay();
-    displaySyllable();
+    // Sinaliza que o pulo/escopo foi ativado para evitar loops
+    state.isLevelSkipActive = true; 
+    
+    // Reinicia o jogo com a lista fatiada
+    startGame();
+    
+    // Reseta o flag após o reinício
+    setTimeout(() => { state.isLevelSkipActive = false; }, 100);
 }

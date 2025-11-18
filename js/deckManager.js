@@ -1,4 +1,4 @@
-import { state, LAST_OPENED_DECK_ID, DECK_STORAGE_KEY } from './state.js';
+import { state, LAST_OPENED_DECK_ID, DECK_STORAGE_KEY, GROUP_SIZE } from './state.js';
 import * as utils from './utils.js';
 import * as fsrs from './fsrs.js';
 import { dom, renderDeckModal, showCustomAlert, showCustomConfirm, updateModeSettingsVisibility } from './ui.js';
@@ -66,14 +66,24 @@ export function selectDeck(deckId) {
     
     state.currentDeckId = deckId;
     localStorage.setItem(LAST_OPENED_DECK_ID, deckId);
-    state.syllableList = selectedDeck.content;
+
+    // --- ALTERAÇÕES AQUI ---
+    // Salva a lista original completa
+    state.originalSyllableList = [...selectedDeck.content];
+    // Define a lista de jogo atual como a lista completa
+    state.syllableList = [...selectedDeck.content];
+
+    // Reseta o escopo para o padrão (deck inteiro)
+    state.levelScopeStart = 1;
+    const maxLevel = Math.ceil(state.originalSyllableList.length / GROUP_SIZE);
+    state.levelScopeEnd = maxLevel > 0 ? maxLevel : 1;
+    // --- FIM DAS ALTERAÇÕES ---
 
     // Passa startGame como o callback
     applyDeckSettingsToGame(selectedDeck.settings, startGame); 
     
     dom.currentDeckNameSpan.textContent = selectedDeck.name;
     dom.deckModal.style.display = 'none';
-    // startGame(); // Removido daqui
 }
 
 function _updateStatsUI(stats, deckName) {
